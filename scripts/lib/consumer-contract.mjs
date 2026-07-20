@@ -19,6 +19,15 @@ function run(command, args, cwd) {
   return result;
 }
 
+function runPnpm(args, cwd) {
+  const version = process.env.KOKE_CONSUMER_PNPM_VERSION;
+  if (!version) return run('pnpm', args, cwd);
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new Error(`Invalid KOKE_CONSUMER_PNPM_VERSION: ${version}`);
+  }
+  return run('corepack', [`pnpm@${version}`, ...args], cwd);
+}
+
 export function runPackagedConsumerContract(root = process.cwd()) {
   const workspaceRoot = resolve(root);
   const temporaryRoot = mkdtempSync(join(tmpdir(), 'kokecore-consumer-contract-'));
@@ -39,10 +48,10 @@ export function runPackagedConsumerContract(root = process.cwd()) {
     }
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-    run('pnpm', ['install', '--no-frozen-lockfile'], consumerRoot);
-    run('pnpm', ['run', 'typecheck'], consumerRoot);
-    run('pnpm', ['run', 'build'], consumerRoot);
-    const execution = run('pnpm', ['run', 'start'], consumerRoot);
+    runPnpm(['install', '--no-frozen-lockfile'], consumerRoot);
+    runPnpm(['run', 'typecheck'], consumerRoot);
+    runPnpm(['run', 'build'], consumerRoot);
+    const execution = runPnpm(['run', 'start'], consumerRoot);
     if (!execution.stdout.includes('REFERENCE_CONSUMER_OK')) {
       throw new Error('Reference consumer did not report successful execution.');
     }
