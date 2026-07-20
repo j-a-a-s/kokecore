@@ -113,4 +113,24 @@ describe('Permission checker', () => {
     expect(checker.checkRolePermissions(Role.MEMBER, ['clients.read'])).toBe(true);
     expect(checker.checkRolePermissions(Role.MEMBER, ['clients.delete'])).toBe(false);
   });
+
+  it('does not bypass ABAC rules when a cache key has a prior authorization', () => {
+    const engine = new ABACEngine();
+    engine.addRule({
+      permission: 'clients.update',
+      condition: (context) => context.organizationId === 'org-1',
+    });
+    const checker = new PermissionChecker(engine);
+
+    expect(
+      checker.checkWithCache('user-1', Role.MEMBER, ['clients.update'], {
+        organizationId: 'org-1',
+      })
+    ).toBe(true);
+    expect(
+      checker.checkWithCache('user-1', Role.MEMBER, ['clients.update'], {
+        organizationId: 'org-2',
+      })
+    ).toBe(false);
+  });
 });

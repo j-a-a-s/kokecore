@@ -215,7 +215,6 @@ export class KokecoreError extends Error {
       message: this.message,
       statusCode: this.statusCode,
       category: this.category,
-      context: this.context,
       recovery: this.recovery,
       repairable: this.repairable,
       field: this.field,
