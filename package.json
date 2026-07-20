@@ -20,6 +20,7 @@
     "api:snapshot": "node scripts/update-public-api-snapshots.mjs",
     "config:artifact": "node scripts/certify-config-artifact.mjs",
     "config:certify:kaklen": "node scripts/certify-config-kaklen.mjs",
+    "config:sast": "node scripts/scan-config-sast.mjs",
     "package:validate": "node scripts/verify-package-contents.mjs",
     "security:audit": "pnpm audit --audit-level high",
     "security:licenses": "node scripts/verify-licenses.mjs",

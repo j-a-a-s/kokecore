@@ -57,6 +57,9 @@ jobs:
       - name: Scan repository for secrets
         run: pnpm security:scan
 
+      - name: Scan Config source with focused SAST
+        run: pnpm config:sast
+
       - name: Review dependency licenses
         run: pnpm security:licenses
 
