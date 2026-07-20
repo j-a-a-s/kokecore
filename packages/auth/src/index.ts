@@ -13,7 +13,7 @@
  */
 
 import * as argon2 from 'argon2';
-import { createHash } from 'crypto';
+import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 /**
@@ -393,7 +393,7 @@ export class SessionService {
   }
 
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${randomUUID()}`;
   }
 }
 
@@ -468,7 +468,12 @@ export class MFAService {
   }
 
   private generateBackupCode(): string {
-    return Math.random().toString(36).substr(2, 8).toUpperCase();
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let index = 0; index < 8; index += 1) {
+      code += alphabet.charAt(randomInt(alphabet.length));
+    }
+    return code;
   }
 }
 

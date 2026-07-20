@@ -93,9 +93,7 @@ export function verifyPackageContents(root = process.cwd()) {
       const packagedManifestPath = join(extractionRoot, 'package', 'package.json');
       const packagedManifest = JSON.parse(readFileSync(packagedManifestPath, 'utf8'));
       const packagedManifestErrors = validateManifest(packagedManifest);
-      const textFiles = entries
-        .filter((entry) => !entry.endsWith('/'))
-        .map((entry) => entry.replace(/^package\//, 'package/'));
+      const textFiles = entries.filter((entry) => !entry.endsWith('/'));
       const secretFindings = scanFiles(extractionRoot, textFiles);
 
       const errors = [

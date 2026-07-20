@@ -79,6 +79,7 @@ describe('SessionService', () => {
 
   it('creates and retrieves sessions', async () => {
     const session = await service.createSession('user-1');
+    expect(session.id).toMatch(/^session_[0-9a-f-]{36}$/);
     expect(session.userId).toBe('user-1');
     expect(session.sessionVersion).toBe(1);
     const retrieved = await service.getSession(session.id);
@@ -172,7 +173,8 @@ describe('MFAService', () => {
   it('generates backup codes', async () => {
     const codes = await service.generateBackupCodes(5);
     expect(codes).toHaveLength(5);
-    expect(codes[0]).toHaveLength(8);
+    expect(new Set(codes).size).toBe(5);
+    for (const code of codes) expect(code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
   });
 
   it('verifies and removes backup codes', async () => {
