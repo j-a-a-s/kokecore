@@ -42,13 +42,13 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "^22.15.32",
+    "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.64.0",
     "eslint": "^10.7.0",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.0",
-    "typescript": "^5.8.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
