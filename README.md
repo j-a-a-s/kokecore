@@ -5,6 +5,14 @@ Internal reusable libraries for KOKE GROUP Node.js/TypeScript applications.
 > **Alpha:** every package is private and `UNLICENSED`. Public npm publishing
 > is blocked. No package is declared stable or production-ready.
 
+## Runtime requirements
+
+- Node.js `>=22 <25`
+- pnpm `>=8 <10`
+
+Node.js 18 and 20 are not supported because they are not covered by the current
+compatibility and consumer-test matrix.
+
 ## Overview
 
 KOKE CORE is a collection of reusable library candidates being hardened before

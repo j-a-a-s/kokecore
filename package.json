@@ -38,7 +38,7 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=18 <25",
+    "node": ">=22 <25",
     "pnpm": ">=8 <10"
   },
   "packageManager": "pnpm@8.15.0",
