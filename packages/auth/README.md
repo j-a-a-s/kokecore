@@ -1,6 +1,7 @@
 # @kokecore/auth
 
-Enterprise authentication with JWT, OAuth2, MFA, and session management.
+Internal authentication primitives. The package is not approved for auth
+extraction or production use during Alpha.
 
 ## Features
 
@@ -13,19 +14,17 @@ Enterprise authentication with JWT, OAuth2, MFA, and session management.
 - Rate limiting
 - Audit logging
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/auth
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 
 ```typescript
-import { AuthService } from '@kokecore/auth';
+import { PasswordService } from '@kokecore/auth';
 
-const auth = new AuthService(config);
-const { success, tokenPair } = await auth.authenticate(email, password, ip, userAgent);
-
-await auth.logoutAll(userId);
+const passwords = new PasswordService(config);
+const passwordHash = await passwords.hashPassword(password);
+const matches = await passwords.verifyPassword(password, passwordHash);
 ```

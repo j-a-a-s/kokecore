@@ -11,11 +11,10 @@ Structured logging with OpenTelemetry tracing and sensitive data redaction.
 - Sensitive data redaction
 - OpenTelemetry trace/span context
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/logging
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 

@@ -9,14 +9,13 @@ Comprehensive validation and sanitization library with international support.
 - Money precision validation
 - International phone validation
 - IBAN validation
-- XSS/SQL injection sanitization
+- HTML escaping for display boundaries
 - PII masking
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/validation
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 

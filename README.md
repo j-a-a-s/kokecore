@@ -1,10 +1,14 @@
 # Kokecore
 
-Enterprise-grade reusable libraries for Node.js/TypeScript applications.
+Internal reusable libraries for KOKE GROUP Node.js/TypeScript applications.
+
+> **Alpha:** every package is private and `UNLICENSED`. Public npm publishing
+> is blocked. No package is declared stable or production-ready.
 
 ## Overview
 
-Kokecore is a collection of production-ready, battle-tested libraries extracted from real-world applications. Each library is designed to be:
+KOKE CORE is a collection of reusable library candidates being hardened before
+approved consumption. Each library is designed to be:
 
 - **Framework-agnostic**: Works with NestJS, Express, Fastify, or vanilla Node.js
 - **Type-safe**: Full TypeScript support with strict mode
@@ -46,12 +50,18 @@ Enterprise authentication with JWT, OAuth2, MFA, and session management.
 
 Calendar synchronization with Google Calendar, Microsoft Graph, and Apple Calendar.
 
-## Installation
+## Internal development
 
 ```bash
-# Install individual packages
-pnpm add @kokecore/config
-pnpm add @kokecore/auth
+pnpm install --frozen-lockfile
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm build
+pnpm test
+pnpm test:coverage
+pnpm test:consumer
+pnpm package:validate
 ```
 
 ## Usage
@@ -68,22 +78,19 @@ const config = readApiConfig(process.env);
 ### @kokecore/auth
 
 ```typescript
-import { JwtAuthGuard } from '@kokecore/auth';
+import { PasswordService } from '@kokecore/auth';
 
-@Controller('protected')
-@UseGuards(JwtAuthGuard)
-class ProtectedController {
-  // Your controller logic
-}
+const passwordService = new PasswordService(authConfig);
+const hash = await passwordService.hashPassword(password);
 ```
 
 ### @kokecore/calendar
 
 ```typescript
-import { GoogleCalendarService } from '@kokecore/calendar';
+import { CalendarProvider, type CalendarEvent } from '@kokecore/calendar';
 
-const calendarService = new GoogleCalendarService(credentials);
-await calendarService.syncEvent(event);
+const provider: CalendarProvider = CalendarProvider.GOOGLE;
+const event: CalendarEvent = loadEvent();
 ```
 
 ## Development
@@ -108,25 +115,27 @@ pnpm lint
 pnpm typecheck
 ```
 
-## Best Practices
+## Governance
 
-Kokecore libraries follow these principles:
+The binding package controls are documented in:
 
-1. **Security First**: All libraries are built with security as a primary concern
-2. **Type Safety**: Full TypeScript support with no `any` types
-3. **Testing**: >80% code coverage with comprehensive test suites
-4. **Documentation**: Clear API docs with examples
-5. **Performance**: Optimized for production workloads
-6. **Maintainability**: Clean code with clear separation of concerns
+- [Compatibility matrix](docs/COMPATIBILITY_MATRIX.md)
+- [Licensing and IP policy](docs/LICENSING_AND_IP_POLICY.md)
+- [Public API policy](docs/PUBLIC_API_POLICY.md)
+- [Package maturity](docs/PACKAGE_MATURITY.md)
+- [Kaklen consumption gate](docs/KAKLEN_CONSUMPTION_GATE.md)
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## License
+## Legal status
 
-MIT License - see [LICENSE](LICENSE) for details.
+Proprietary and internal during Alpha. See [LICENSE](LICENSE) and the
+[licensing policy](docs/LICENSING_AND_IP_POLICY.md). Public distribution
+requires a later legal decision.
 
 ## Support
 
-For issues and questions, please use the GitHub issue tracker.
+Use the private repository issue tracker. Do not disclose source, package
+tarballs, security findings, or credentials in public channels.

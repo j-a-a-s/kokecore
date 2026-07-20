@@ -11,11 +11,10 @@ Role-Based and Attribute-Based Access Control (RBAC/ABAC) with improved permissi
 - Conflict detection
 - Permission templates
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/rbac
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 

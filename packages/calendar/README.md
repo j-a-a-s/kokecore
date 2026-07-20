@@ -1,6 +1,7 @@
 # @kokecore/calendar
 
-Enterprise calendar synchronization with Google Calendar, Microsoft Graph, and Apple Calendar.
+Internal calendar contract experiments. Provider implementations are not
+approved for production use during Alpha.
 
 ## Features
 
@@ -15,27 +16,17 @@ Enterprise calendar synchronization with Google Calendar, Microsoft Graph, and A
 - Video conferencing (Zoom/Teams/Meet) hooks
 - Sync queue system
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/calendar
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 
 ```typescript
-import { CalendarService, CalendarProvider, CalendarEvent } from '@kokecore/calendar';
+import { CalendarProvider, EventStatus, type CalendarEvent } from '@kokecore/calendar';
 
-const calendar = new CalendarService();
-
-calendar.registerIntegration({
-  provider: CalendarProvider.GOOGLE,
-  userId,
-  organizationId,
-  credentials: { accessToken, refreshToken, expiresAt },
-  syncEnabled: true,
-  syncDirection: 'BIDIRECTIONAL',
-});
-
-const result = await calendar.syncEvent(event);
+const provider = CalendarProvider.GOOGLE;
+const status = EventStatus.CONFIRMED;
+const event: CalendarEvent = loadCalendarEvent();
 ```

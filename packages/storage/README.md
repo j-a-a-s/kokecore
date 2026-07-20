@@ -1,6 +1,7 @@
 # @kokecore/storage
 
-Multi-cloud storage abstraction with S3, Azure, GCS, and MinIO support.
+Internal storage boundary and security helpers. Provider implementations are
+not approved for production use during Alpha.
 
 ## Features
 
@@ -12,30 +13,31 @@ Multi-cloud storage abstraction with S3, Azure, GCS, and MinIO support.
 - CDN integration
 - Virus scan hooks
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/storage
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 
 ```typescript
-import { StorageFactory, StorageProvider, EnhancedStorageService } from '@kokecore/storage';
+import { buildStorageKey, StorageProvider } from '@kokecore/storage';
 
-const storage = StorageFactory.create({
+const config = {
   provider: StorageProvider.S3,
   awsRegion: 'us-east-1',
   awsS3Bucket: 'my-bucket',
-});
+};
 
-const enhanced = new EnhancedStorageService(storage, config);
-const result = await enhanced.createSecureUploadUrl({
-  organizationId,
-  resource: 'documents',
-  resourceId,
-  filename,
-  contentType: 'application/pdf',
-  contentLength: 1024,
-});
+const key = buildStorageKey(
+  {
+    organizationId,
+    resource: 'documents',
+    resourceId,
+    filename,
+    contentType: 'application/pdf',
+    contentLength: 1024,
+  },
+  config
+);
 ```

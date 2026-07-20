@@ -11,11 +11,10 @@ Structured error handling with consistent error codes, context, and recovery sug
 - Aggregated errors for batch validation
 - Circuit breaker exception
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/errors
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 

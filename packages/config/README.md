@@ -10,11 +10,10 @@ Type-safe environment configuration with validation and schema support.
 - CORS origin validation
 - Type-safe configuration objects
 
-## Installation
+## Internal consumption
 
-```bash
-pnpm add @kokecore/config
-```
+Install only from a CI-validated internal tarball. Public registry installation
+is prohibited.
 
 ## Usage
 
