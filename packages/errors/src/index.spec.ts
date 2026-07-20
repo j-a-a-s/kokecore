@@ -7,11 +7,18 @@ import {
   ErrorCategory,
   ValidationError,
   AuthenticationError,
+  AuthorizationError,
+  CircuitBreakerOpenError,
+  InternalServerError,
+  KokecoreError,
   NotFoundError,
   ConflictError,
   RateLimitExceededException,
+  ServiceUnavailableError,
   AggregatedError,
+  type ErrorCode,
 } from './index';
+import * as publicApi from './public';
 
 describe('ErrorFactory', () => {
   it('creates validation errors with field info', () => {
@@ -73,6 +80,61 @@ describe('ErrorFactory', () => {
     expect(aggregated).toBeInstanceOf(AggregatedError);
     expect(aggregated.toJSON().errors).toHaveLength(1);
   });
+
+  it('creates authorization and service errors', () => {
+    const authorization = ErrorFactory.authorization(ERROR_CODES.AUTH_FORBIDDEN, 'Forbidden');
+    expect(authorization).toBeInstanceOf(AuthorizationError);
+    expect(authorization.toJSON()).toMatchObject({
+      statusCode: 403,
+      category: ErrorCategory.AUTHORIZATION,
+      repairable: false,
+    });
+
+    const service = ErrorFactory.serviceUnavailable(
+      ERROR_CODES.EXTERNAL_SERVICE_UNAVAILABLE,
+      'Unavailable'
+    );
+    expect(service).toBeInstanceOf(ServiceUnavailableError);
+    expect(service.toJSON().statusCode).toBe(503);
+  });
+
+  it('creates internal and circuit-breaker errors with defaults', () => {
+    const internal = ErrorFactory.internal();
+    expect(internal).toBeInstanceOf(InternalServerError);
+    expect(internal.toJSON()).toMatchObject({
+      code: ERROR_CODES.INTERNAL_ERROR,
+      message: 'Internal server error',
+    });
+
+    const circuit = ErrorFactory.circuitBreaker('payments', { requestId: 'request-1' });
+    expect(circuit).toBeInstanceOf(CircuitBreakerOpenError);
+    expect(circuit.message).toContain('payments');
+    expect(circuit.context?.metadata).toEqual({ serviceName: 'payments' });
+  });
+
+  it('retains base error metadata without serializing context', () => {
+    const error = new KokecoreError(
+      ERROR_CODES.BUSINESS_RULE_VIOLATION,
+      'Business rule',
+      422,
+      ErrorCategory.BUSINESS,
+      {
+        field: 'amount',
+        resourceId: 'quotation-1',
+        timestamp: '2026-01-01T00:00:00.000Z',
+      },
+      { action: 'review', description: 'Review the amount', automated: false },
+      true
+    );
+    expect(error.name).toBe('KokecoreError');
+    expect(error.timestamp).toBe('2026-01-01T00:00:00.000Z');
+    expect(error.toJSON()).toMatchObject({
+      field: 'amount',
+      resourceId: 'quotation-1',
+      repairable: true,
+    });
+    expect(error.toJSON()).not.toHaveProperty('context');
+  });
 });
 
 describe('Error helpers', () => {
@@ -91,9 +153,23 @@ describe('Error helpers', () => {
   it('maps error codes to categories', () => {
     expect(categoryForCode(ERROR_CODES.VALIDATION_INVALID_INPUT)).toBe(ErrorCategory.VALIDATION);
     expect(categoryForCode(ERROR_CODES.AUTH_FORBIDDEN)).toBe(ErrorCategory.AUTHORIZATION);
+    expect(categoryForCode(ERROR_CODES.AUTH_INVALID_CREDENTIALS)).toBe(
+      ErrorCategory.AUTHENTICATION
+    );
     expect(categoryForCode(ERROR_CODES.RESOURCE_NOT_FOUND)).toBe(ErrorCategory.NOT_FOUND);
+    expect(categoryForCode(ERROR_CODES.DUPLICATE_RESOURCE)).toBe(ErrorCategory.CONFLICT);
     expect(categoryForCode(ERROR_CODES.RATE_LIMIT_EXCEEDED)).toBe(ErrorCategory.RATE_LIMIT);
-    expect(categoryForCode('UNKNOWN_CODE' as any)).toBe(ErrorCategory.INTERNAL);
+    expect(categoryForCode(ERROR_CODES.DATABASE_CONNECTION)).toBe(ErrorCategory.DATABASE);
+    expect(categoryForCode(ERROR_CODES.EXTERNAL_SERVICE_UNAVAILABLE)).toBe(
+      ErrorCategory.EXTERNAL_SERVICE
+    );
+    expect(categoryForCode(ERROR_CODES.AUTH_DELIVERY_UNAVAILABLE)).toBe(
+      ErrorCategory.EXTERNAL_SERVICE
+    );
+    expect(categoryForCode(ERROR_CODES.NETWORK_TIMEOUT)).toBe(ErrorCategory.NETWORK);
+    expect(categoryForCode(ERROR_CODES.BUSINESS_RULE_VIOLATION)).toBe(ErrorCategory.BUSINESS);
+    expect(categoryForCode(ERROR_CODES.WORKFLOW_INVALID_TRANSITION)).toBe(ErrorCategory.WORKFLOW);
+    expect(categoryForCode('UNKNOWN_CODE' as ErrorCode)).toBe(ErrorCategory.INTERNAL);
   });
 });
 
@@ -119,5 +195,14 @@ describe('DefaultErrorHandler', () => {
     const response = handler.handle('boom');
     expect(response.statusCode).toBe(500);
     expect(response.message).toBe('An unexpected error occurred');
+  });
+});
+
+describe('Public API', () => {
+  it('resolves every runtime export from the package entry point', () => {
+    for (const key of Object.keys(publicApi) as Array<keyof typeof publicApi>) {
+      expect(publicApi[key]).toBeDefined();
+    }
+    expect(publicApi.ErrorFactory).toBe(ErrorFactory);
   });
 });

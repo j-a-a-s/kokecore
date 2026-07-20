@@ -4,6 +4,7 @@ import {
   CalendarEvent,
   RecurrenceRule,
   CalendarService,
+  CalendarSyncService,
   ConflictDetectionService,
   RecurringEventService,
   EventMapper,
@@ -12,7 +13,11 @@ import {
   VideoConferencingService,
   GoogleCalendarService,
   MicrosoftGraphService,
+  AppleCalendarService,
+  calendarEventSchema,
+  type CalendarIntegrationConfig,
 } from './index';
+import * as publicApi from './public';
 
 function createEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
   return {
@@ -96,6 +101,82 @@ describe('CalendarService', () => {
     await service.processSyncQueue();
     expect(service.getQueueService().getQueueStatus().pending).toBe(0);
   });
+
+  it('registers integrations, syncs events, and exchanges OAuth codes', async () => {
+    service.registerIntegration({
+      provider: CalendarProvider.GOOGLE,
+      userId: 'user-calendar-service',
+      organizationId: 'org-1',
+      credentials: { accessToken: 'test-only-token' },
+      syncEnabled: true,
+      syncDirection: 'BIDIRECTIONAL',
+    });
+    expect((await service.syncEvent(createEvent())).eventsCreated).toBeGreaterThan(0);
+    expect(
+      await service.exchangeCodeForTokens(
+        CalendarProvider.GOOGLE,
+        'code',
+        'https://app.example.com/callback'
+      )
+    ).toMatchObject({ accessToken: 'access_token_placeholder' });
+    expect(service.getMapper()).toBeInstanceOf(EventMapper);
+  });
+});
+
+describe('CalendarSyncService', () => {
+  function integration(
+    provider: CalendarProvider,
+    overrides: Partial<CalendarIntegrationConfig> = {}
+  ): CalendarIntegrationConfig {
+    return {
+      provider,
+      userId: `user-${provider}`,
+      organizationId: 'org-1',
+      credentials: { accessToken: 'test-only-token' },
+      syncEnabled: true,
+      syncDirection: 'BIDIRECTIONAL',
+      ...overrides,
+    };
+  }
+
+  it('syncs enabled providers and skips disabled integrations', async () => {
+    const service = new CalendarSyncService();
+    service.registerIntegration(integration(CalendarProvider.GOOGLE));
+    service.registerIntegration(integration(CalendarProvider.MICROSOFT));
+    service.registerIntegration(integration(CalendarProvider.APPLE));
+    service.registerIntegration(
+      integration(CalendarProvider.GOOGLE, { userId: 'disabled', syncEnabled: false })
+    );
+    const result = await service.syncEvent(createEvent());
+    expect(result).toMatchObject({ success: true, eventsCreated: 3 });
+  });
+
+  it('captures unsupported-provider errors', async () => {
+    const service = new CalendarSyncService();
+    service.registerIntegration(integration('UNSUPPORTED' as CalendarProvider));
+    const result = await service.syncEvent(createEvent());
+    expect(result.success).toBe(false);
+    expect(result.errors[0]).toContain('Unsupported provider');
+  });
+
+  it('syncs from registered calendars and returns empty for missing providers', async () => {
+    const service = new CalendarSyncService();
+    expect(
+      await service.syncFromCalendar(
+        CalendarProvider.GOOGLE,
+        new Date('2024-01-01'),
+        new Date('2024-01-02')
+      )
+    ).toEqual([]);
+    service.registerIntegration(integration(CalendarProvider.GOOGLE));
+    expect(
+      await service.syncFromCalendar(
+        CalendarProvider.GOOGLE,
+        new Date('2024-01-01'),
+        new Date('2024-01-02')
+      )
+    ).toEqual([]);
+  });
 });
 
 describe('ConflictDetectionService', () => {
@@ -138,6 +219,25 @@ describe('ConflictDetectionService', () => {
     expect(conflict).not.toBeNull();
     expect(conflict?.type).toBe('VERSION_MISMATCH');
   });
+
+  it('returns no conflicts for distinct, equivalent events', () => {
+    const first = createEvent({ id: 'first' });
+    const second = createEvent({
+      id: 'second',
+      title: 'Different',
+      startTime: new Date('2024-01-16T10:00:00Z'),
+      endTime: new Date('2024-01-16T11:00:00Z'),
+    });
+    expect(service.detectTimeOverlap([first, second])).toEqual([]);
+    expect(service.detectDuplicates([first, second])).toEqual([]);
+    expect(service.detectVersionMismatch(first, { ...first })).toBeNull();
+    expect(
+      service.detectVersionMismatch(first, {
+        ...first,
+        startTime: new Date('2024-01-15T10:01:00Z'),
+      })
+    ).not.toBeNull();
+  });
 });
 
 describe('RecurringEventService', () => {
@@ -172,6 +272,36 @@ describe('RecurringEventService', () => {
     const rule: RecurrenceRule = { frequency: 'DAILY', interval: 2 };
     expect(service.generateRecurrenceString(rule)).toBe('FREQ=DAILY;INTERVAL=2');
   });
+
+  it.each(['DAILY', 'MONTHLY', 'YEARLY'] as const)('expands %s recurrence', (frequency) => {
+    const event = createEvent({ recurrence: { frequency, interval: 1, count: 2 } });
+    const instances = service.expandRecurringEvent(
+      event,
+      new Date('2024-01-15T00:00:00Z'),
+      new Date('2026-01-01T00:00:00Z')
+    );
+    expect(instances).toHaveLength(2);
+  });
+
+  it('honors start, end, until, and the default count', () => {
+    const event = createEvent({
+      recurrence: {
+        frequency: 'DAILY',
+        interval: 1,
+        until: new Date('2024-01-17T10:00:00Z'),
+      },
+    });
+    const instances = service.expandRecurringEvent(
+      event,
+      new Date('2024-01-16T00:00:00Z'),
+      new Date('2025-01-01T00:00:00Z')
+    );
+    expect(instances).toHaveLength(2);
+    expect(service.parseRecurrenceRule('FREQ=WEEKLY')).toEqual({
+      frequency: 'WEEKLY',
+      interval: 1,
+    });
+  });
 });
 
 describe('EventMapper', () => {
@@ -183,6 +313,27 @@ describe('EventMapper', () => {
     expect(google.summary).toBe('Test Event');
     expect(google.start.dateTime).toBe(event.startTime.toISOString());
     expect(google.start.timeZone).toBe('America/Santiago');
+  });
+
+  it('maps attendees, defaults timezone, and emits recurrence details', () => {
+    const event = createEvent({
+      attendees: [{ email: 'person@example.com', name: 'Person', responseStatus: 'ACCEPTED' }],
+      recurrence: {
+        frequency: 'WEEKLY',
+        interval: 2,
+        until: new Date('2024-02-01T00:00:00Z'),
+        count: 3,
+      },
+    });
+    const google = mapper.toGoogleFormat(event);
+    expect(google.start.timeZone).toBe('UTC');
+    expect(google.attendees).toHaveLength(1);
+    expect(google.recurrence[0]).toContain('UNTIL=');
+    expect(google.recurrence[0]).toContain('COUNT=3');
+
+    const microsoft = mapper.toMicrosoftFormat(event);
+    expect(microsoft.start.timeZone).toBe('UTC');
+    expect(microsoft.attendees[0].emailAddress.address).toBe('person@example.com');
   });
 
   it('maps from Google Calendar format', () => {
@@ -220,6 +371,23 @@ describe('EventMapper', () => {
     expect(event.provider).toBe(CalendarProvider.MICROSOFT);
     expect(event.title).toBe('Teams Event');
   });
+
+  it('marks provider events without dateTime as all-day', () => {
+    const google = mapper.fromGoogleFormat({
+      id: 'all-day-google',
+      summary: 'All day',
+      start: { dateTime: '', timeZone: 'UTC' },
+      end: { dateTime: '2024-01-16T00:00:00Z' },
+    });
+    const microsoft = mapper.fromMicrosoftFormat({
+      id: 'all-day-ms',
+      subject: 'All day',
+      start: { dateTime: '', timeZone: 'UTC' },
+      end: { dateTime: '2024-01-16T00:00:00Z' },
+    });
+    expect(google.allDay).toBe(true);
+    expect(microsoft.allDay).toBe(true);
+  });
 });
 
 describe('CalendarOAuthService', () => {
@@ -244,6 +412,12 @@ describe('CalendarOAuthService', () => {
       'https://app/cb'
     );
     expect(tokens.accessToken).toBeDefined();
+    expect(tokens.expiresAt).toBeInstanceOf(Date);
+  });
+
+  it('refreshes access tokens', async () => {
+    const tokens = await service.refreshAccessToken(CalendarProvider.APPLE, 'refresh-token');
+    expect(tokens.accessToken).toBe('new_access_token_placeholder');
     expect(tokens.expiresAt).toBeInstanceOf(Date);
   });
 });
@@ -275,6 +449,28 @@ describe('SyncQueueService', () => {
     expect(service.getQueueStatus().pending).toBe(0);
     expect(service.getQueueStatus().failed).toBe(0);
   });
+
+  it('returns immediately while already processing and exercises retry failure paths', async () => {
+    const busy = new SyncQueueService();
+    (busy as unknown as { processing: boolean }).processing = true;
+    await expect(busy.processQueue()).resolves.toBeUndefined();
+
+    const failing = new SyncQueueService();
+    (
+      failing as unknown as {
+        processJob: (job: unknown) => Promise<void>;
+      }
+    ).processJob = jest.fn().mockRejectedValue(new Error('provider failure'));
+    await failing.addJob({
+      integrationId: 'int-failing',
+      type: 'SYNC',
+      priority: 'LOW',
+      scheduledAt: new Date(),
+      maxAttempts: 2,
+    });
+    await expect(failing.processQueue()).resolves.toBeUndefined();
+    expect(failing.getQueueStatus()).toEqual({ pending: 0, processing: 0, failed: 0 });
+  });
 });
 
 describe('VideoConferencingService', () => {
@@ -295,6 +491,15 @@ describe('VideoConferencingService', () => {
 });
 
 describe('Provider services', () => {
+  const config: CalendarIntegrationConfig = {
+    provider: CalendarProvider.GOOGLE,
+    userId: 'u1',
+    organizationId: 'o1',
+    credentials: { accessToken: 'test-only-token' },
+    syncEnabled: true,
+    syncDirection: 'BIDIRECTIONAL',
+  };
+
   it('GoogleCalendarService sync returns external id', async () => {
     const service = new GoogleCalendarService({
       provider: CalendarProvider.GOOGLE,
@@ -319,5 +524,58 @@ describe('Provider services', () => {
     });
     const id = await service.syncEvent(createEvent());
     expect(id).toMatch(/^microsoft_/);
+  });
+
+  it('exercises Google provider placeholder methods', async () => {
+    const service = new GoogleCalendarService(config);
+    expect(await service.getEvent('external')).toBeNull();
+    await expect(service.deleteEvent('external')).resolves.toBeUndefined();
+    await expect(service.listEvents(new Date(), new Date())).resolves.toEqual([]);
+    await expect(service.watchCalendar('https://hooks.example.com/google')).resolves.toBe(
+      'channel_id'
+    );
+    await expect(service.stopWatching('channel')).resolves.toBeUndefined();
+  });
+
+  it('exercises Microsoft provider placeholder methods', async () => {
+    const service = new MicrosoftGraphService({ ...config, provider: CalendarProvider.MICROSOFT });
+    expect(await service.getEvent('external')).toBeNull();
+    await expect(service.deleteEvent('external')).resolves.toBeUndefined();
+    await expect(service.listEvents(new Date(), new Date())).resolves.toEqual([]);
+    await expect(service.subscribeToChanges('https://hooks.example.com/microsoft')).resolves.toBe(
+      'subscription_id'
+    );
+    await expect(service.unsubscribe('subscription')).resolves.toBeUndefined();
+  });
+
+  it('exercises Apple provider placeholder methods', async () => {
+    const service = new AppleCalendarService({ ...config, provider: CalendarProvider.APPLE });
+    expect(await service.syncEvent(createEvent())).toBe('apple_event-1');
+    expect(await service.getEvent('external')).toBeNull();
+    await expect(service.deleteEvent('external')).resolves.toBeUndefined();
+    await expect(service.listEvents(new Date(), new Date())).resolves.toEqual([]);
+  });
+});
+
+describe('Calendar event schema', () => {
+  it('parses complete events and rejects invalid contracts', () => {
+    const parsed = calendarEventSchema.parse({
+      ...createEvent({ id: '00000000-0000-4000-8000-000000000000' }),
+      attendees: [{ email: 'person@example.com', optional: true }],
+      recurrence: { frequency: 'DAILY', interval: 1, count: 2 },
+      conferenceData: { provider: 'MEET', meetingUrl: 'https://meet.example.com/room' },
+    });
+    expect(parsed.startTime).toBeInstanceOf(Date);
+    expect(calendarEventSchema.safeParse({ ...parsed, title: '' }).success).toBe(false);
+    expect(calendarEventSchema.safeParse({ ...parsed, id: 'invalid' }).success).toBe(false);
+  });
+});
+
+describe('Public API', () => {
+  it('resolves every runtime export from the package entry point', () => {
+    for (const key of Object.keys(publicApi) as Array<keyof typeof publicApi>) {
+      expect(publicApi[key]).toBeDefined();
+    }
+    expect(publicApi.CalendarProvider).toBe(CalendarProvider);
   });
 });
