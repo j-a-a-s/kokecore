@@ -262,31 +262,10 @@ export function sanitizeHTML(input: string): string {
 }
 
 /**
- * SQL injection prevention
- */
-export function sanitizeSQL(input: string): string {
-  return input
-    .replace(/'/g, "''")
-    .replace(/"/g, '""')
-    .replace(/--/g, '')
-    .replace(/\/\*/g, '')
-    .replace(/\*\//g, '');
-}
-
-/**
  * General input sanitization
  */
-export function sanitizeInput(input: string, options = { html: true, sql: true }): string {
-  let sanitized = input;
-
-  if (options.html) {
-    sanitized = sanitizeHTML(sanitized);
-  }
-
-  if (options.sql) {
-    sanitized = sanitizeSQL(sanitized);
-  }
-
+export function sanitizeInput(input: string, options = { html: true }): string {
+  const sanitized = options.html ? sanitizeHTML(input) : input;
   return sanitized.trim();
 }
 

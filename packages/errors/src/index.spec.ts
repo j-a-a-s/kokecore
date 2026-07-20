@@ -35,6 +35,18 @@ describe('ErrorFactory', () => {
     expect(error.toJSON().statusCode).toBe(401);
   });
 
+  it('does not serialize internal context', () => {
+    const error = new AuthenticationError(
+      ERROR_CODES.AUTH_INVALID_CREDENTIALS,
+      'Invalid credentials',
+      {
+        stack: 'secret-stack',
+        metadata: { accessToken: 'secret-token' },
+      }
+    );
+    expect(error.toJSON()).not.toHaveProperty('context');
+  });
+
   it('creates not found errors with resource id', () => {
     const error = ErrorFactory.notFound(ERROR_CODES.RESOURCE_NOT_FOUND, 'Not found', 'user-123');
     expect(error).toBeInstanceOf(NotFoundError);

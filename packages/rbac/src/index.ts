@@ -421,13 +421,16 @@ export class PermissionChecker {
     requiredPermissions: readonly Permission[],
     context?: ABACContext
   ): boolean {
+    if (context) {
+      return this.checkPermissions(role, requiredPermissions, context);
+    }
+
     const cached = this.cache.get(cacheKey);
     if (cached !== null) {
       return requiredPermissions.every((permission) => cached.includes(permission));
     }
 
-    const result = this.checkPermissions(role, requiredPermissions, context);
-
+    const result = this.checkPermissions(role, requiredPermissions);
     if (result) {
       this.cache.set(cacheKey, permissionsForRole(role));
     }
