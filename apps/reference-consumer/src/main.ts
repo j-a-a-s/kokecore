@@ -1,5 +1,10 @@
 import { PasswordService, type AuthConfig } from '@kokecore/auth';
-import { readApiConfig } from '@kokecore/config';
+import {
+  defineConfigSchema,
+  readInteger,
+  readRuntimeMode,
+  validateEnvironment,
+} from '@kokecore/config';
 import { ERROR_CODES, ErrorFactory } from '@kokecore/errors';
 import { redactSensitiveData } from '@kokecore/logging';
 import { Role, roleHasPermission } from '@kokecore/rbac';
@@ -21,7 +26,17 @@ const authConfig: AuthConfig = {
 };
 
 export function runReferenceConsumer(): Record<string, boolean | number | string> {
-  const api = readApiConfig({ NODE_ENV: 'test', PORT: '3100' });
+  const runtimeSchema = defineConfigSchema(['NODE_ENV', 'PORT'], (environment) => ({
+    nodeEnv: readRuntimeMode(environment),
+    port: readInteger(environment, 'PORT', { defaultValue: 3000, minimum: 1 }),
+  }));
+  const runtime = validateEnvironment(
+    runtimeSchema,
+    { NODE_ENV: 'test', PORT: '3100' },
+    {
+      unknownVariables: 'reject',
+    }
+  );
   const passwordCheck = new PasswordService(authConfig).validatePassword('Valid-Passw0rd!');
   const validationError = ErrorFactory.validation(
     ERROR_CODES.VALIDATION_INVALID_INPUT,
@@ -35,7 +50,7 @@ export function runReferenceConsumer(): Record<string, boolean | number | string
   const usd = createMoneySchema('USD').parse(10.25);
 
   return {
-    config: api.port === 3100,
+    config: runtime.nodeEnv === 'test' && runtime.port === 3100,
     error: validationError.toJSON().code === ERROR_CODES.VALIDATION_INVALID_INPUT,
     logging: redacted.password === '[REDACTED]' && redacted.visible === 'yes',
     validation: isValidChileanRut('12.345.678-5') && usd === 10.25,

@@ -9,7 +9,7 @@ The package `exports` map exposes only `.` and packaged files exclude `src`.
 Consumers must import only from the package root:
 
 ```ts
-import { readApiConfig } from '@kokecore/config';
+import { defineConfigSchema, readString } from '@kokecore/config';
 ```
 
 Deep imports, repository-relative imports, and imports from `src` or `dist`

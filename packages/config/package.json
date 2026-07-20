@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "sideEffects": false,
-  "description": "Type-safe environment configuration with validation and schema support",
+  "description": "Product-neutral environment readers, coercion, and typed schema validation",
   "main": "./dist/public.js",
   "types": "./dist/public.d.ts",
   "exports": {
@@ -38,6 +38,10 @@
   ],
   "author": "KOKE GROUP",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22 <25",
+    "pnpm": ">=8 <10"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^22.15.32",
@@ -47,8 +51,5 @@
     "jest": "^30.4.2",
     "ts-jest": "^29.4.0",
     "typescript": "^5.8.3"
-  },
-  "dependencies": {
-    "zod": "^4.4.3"
   }
 }

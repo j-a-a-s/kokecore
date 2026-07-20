@@ -1,418 +1,374 @@
-import { z } from 'zod';
+export type Environment = Readonly<Record<string, string | undefined>>;
 
-/**
- * Core configuration schemas with Zod validation
- */
+export type RuntimeMode = 'development' | 'test' | 'production';
 
-const NodeEnvSchema = z.enum(['development', 'test', 'production']);
-const LogLevelSchema = z.enum(['debug', 'info', 'warn', 'error']);
+export const CONFIG_ISSUE_CODES = {
+  MISSING_VALUE: 'CONFIG_MISSING_VALUE',
+  INVALID_VALUE: 'CONFIG_INVALID_VALUE',
+  UNKNOWN_VARIABLE: 'CONFIG_UNKNOWN_VARIABLE',
+  DUPLICATE_SCHEMA_KEY: 'CONFIG_DUPLICATE_SCHEMA_KEY',
+  SCHEMA_VALIDATION_FAILED: 'CONFIG_SCHEMA_VALIDATION_FAILED',
+} as const;
 
-const ApiConfigSchema = z.object({
-  nodeEnv: NodeEnvSchema,
-  port: z.number().int().positive(),
-  databaseUrl: z.string().url(),
-  databaseSsl: z.boolean(),
-  appVersion: z.string().min(1),
-  commitSha: z.string().min(1),
-  buildTime: z.string().datetime(),
-  corsAllowedOrigins: z.array(z.string().url()).min(1),
-  awsRegion: z.string().min(1),
-  awsS3Bucket: z.string().min(1),
-  awsS3Endpoint: z.string().url().optional(),
-  awsCloudFrontDomain: z.string().optional(),
-  logLevel: LogLevelSchema,
-  trustProxy: z.boolean(),
-  swaggerEnabled: z.boolean(),
-});
+export type ConfigIssueCode = (typeof CONFIG_ISSUE_CODES)[keyof typeof CONFIG_ISSUE_CODES];
 
-const AuthConfigSchema = z.object({
-  jwtAccessSecret: z.string().min(32),
-  jwtRefreshSecret: z.string().min(32),
-  jwtAccessExpiresSeconds: z.number().int().positive(),
-  jwtRefreshExpiresSeconds: z.number().int().positive(),
-  cookieSecure: z.boolean(),
-  authAllowedOrigins: z.array(z.string().url()).min(1),
-});
-
-const OrganizationConfigSchema = z.object({
-  organizationInvitationExpiresSeconds: z.number().int().positive(),
-  appWebUrl: z.string().url(),
-});
-
-const PasswordRecoveryConfigSchema = z.object({
-  appPublicUrl: z.string().url(),
-  expiresMinutes: z.number().int().positive(),
-  emailVerificationExpiresMinutes: z.number().int().positive(),
-  mailFrom: z.string().email(),
-  mailHost: z.string().min(1),
-  mailPort: z.number().int().positive(),
-  mailSecure: z.boolean(),
-  mailConnectionTimeoutMs: z.number().int().positive(),
-  mailGreetingTimeoutMs: z.number().int().positive(),
-  mailSocketTimeoutMs: z.number().int().positive(),
-  authEmailEnabled: z.boolean(),
-  commercialEmailEnabled: z.boolean(),
-  mailUser: z.string().optional(),
-  mailPassword: z.string().optional(),
-});
-
-const ProductIntegrationsConfigSchema = z.object({
-  whatsappMode: z.enum(['manual', 'provider']),
-  whatsappHashSecret: z.string().min(32),
-  paymentGateway: z.enum(['sandbox', 'production']),
-  paymentSandboxSecret: z.string().min(32),
-});
-
-const RedisConfigSchema = z.object({
-  url: z.string().url(),
-  rateLimitHashSecret: z.string().min(32),
-  rateLimitPrefix: z.string().min(1),
-  authDeliveryPrefix: z.string().min(1),
-});
-
-/**
- * Runtime environment configuration
- */
-export interface RuntimeEnvironmentConfig {
-  api: z.infer<typeof ApiConfigSchema>;
-  auth: z.infer<typeof AuthConfigSchema>;
-  organization: z.infer<typeof OrganizationConfigSchema>;
-  passwordRecovery: z.infer<typeof PasswordRecoveryConfigSchema>;
-  productIntegrations: z.infer<typeof ProductIntegrationsConfigSchema>;
-  redis: z.infer<typeof RedisConfigSchema>;
+export interface ConfigIssue {
+  readonly code: ConfigIssueCode;
+  readonly key: string;
+  readonly expected: string;
 }
 
-/**
- * Individual config interfaces
- */
-export type ApiConfig = z.infer<typeof ApiConfigSchema>;
-export type AuthConfig = z.infer<typeof AuthConfigSchema>;
-export type OrganizationConfig = z.infer<typeof OrganizationConfigSchema>;
-export type PasswordRecoveryConfig = z.infer<typeof PasswordRecoveryConfigSchema>;
-export type ProductIntegrationsConfig = z.infer<typeof ProductIntegrationsConfigSchema>;
-export type RedisConfig = z.infer<typeof RedisConfigSchema>;
+export class ConfigurationError extends Error {
+  override readonly name = 'ConfigurationError';
+  readonly code: ConfigIssueCode;
+  readonly issues: readonly ConfigIssue[];
 
-/**
- * Default values for development
- */
-const LOCAL_DATABASE_URL =
-  'postgresql://kokecore:kokecore_dev_password@localhost:5432/kokecore_dev?schema=public';
-const LOCAL_ORIGIN = 'http://localhost:4200';
+  constructor(issues: readonly ConfigIssue[]) {
+    if (issues.length === 0) {
+      throw new TypeError('ConfigurationError requires at least one issue');
+    }
 
-/**
- * Helper functions for environment variable parsing
- */
-function parseNodeEnv(value: string | undefined): 'development' | 'test' | 'production' {
-  const parsed = NodeEnvSchema.safeParse(value);
-  if (parsed.success) return parsed.data;
-  return 'development';
+    const safeIssues = issues.map((issue) => Object.freeze({ ...issue }));
+    super(safeIssues.map(formatIssue).join('; '));
+    this.code = safeIssues[0]!.code;
+    this.issues = Object.freeze(safeIssues);
+  }
 }
 
-function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
-  if (value === undefined) return defaultValue;
-  return value === 'true' || value === '1';
+export interface StringReadOptions {
+  readonly defaultValue?: string;
+  readonly trim?: boolean;
 }
 
-function parseStrictBoolean(
+export interface BooleanCoercionOptions {
+  readonly key?: string;
+  readonly defaultValue?: boolean;
+  readonly trueValues?: readonly string[];
+  readonly falseValues?: readonly string[];
+  readonly caseSensitive?: boolean;
+}
+
+export interface IntegerCoercionOptions {
+  readonly key?: string;
+  readonly defaultValue?: number;
+  readonly minimum?: number;
+  readonly maximum?: number;
+}
+
+export interface StringListCoercionOptions {
+  readonly key?: string;
+  readonly defaultValue?: readonly string[];
+  readonly separator?: string;
+  readonly trim?: boolean;
+  readonly omitEmpty?: boolean;
+  readonly unique?: boolean;
+}
+
+export interface EnumCoercionOptions<T extends string> {
+  readonly key?: string;
+  readonly defaultValue?: T;
+}
+
+export interface ConfigSchema<T extends object> {
+  readonly keys: readonly string[];
+  readonly parse: (environment: Environment) => T;
+}
+
+export interface EnvironmentValidationOptions {
+  readonly unknownVariables?: 'allow' | 'reject';
+  readonly ignoredKeys?: readonly string[];
+}
+
+type SchemaOutput<T> = T extends ConfigSchema<infer Output> ? Output : never;
+type UnionToIntersection<T> = (T extends unknown ? (value: T) => void : never) extends (
+  value: infer Intersection
+) => void
+  ? Intersection
+  : never;
+type ComposedSchemaOutput<T extends readonly ConfigSchema<object>[]> = UnionToIntersection<
+  SchemaOutput<T[number]>
+> &
+  object;
+
+const DEFAULT_TRUE_VALUES = ['true', '1', 'yes', 'on'] as const;
+const DEFAULT_FALSE_VALUES = ['false', '0', 'no', 'off'] as const;
+const RUNTIME_MODES = ['development', 'test', 'production'] as const;
+
+export function isConfigurationError(error: unknown): error is ConfigurationError {
+  return error instanceof ConfigurationError;
+}
+
+export function normalizeOptionalString(
   value: string | undefined,
-  defaultValue: boolean,
-  envName: string
-): boolean {
-  if (value === undefined) return defaultValue;
-  if (value !== 'true' && value !== 'false') {
-    throw new Error(`${envName} must be 'true' or 'false'`);
-  }
-  return value === 'true';
+  options: Pick<StringReadOptions, 'trim'> = {}
+): string | undefined {
+  if (value === undefined) return undefined;
+  const normalized = options.trim === false ? value : value.trim();
+  return normalized.length > 0 ? normalized : undefined;
 }
 
-function parseLogLevel(value: string): 'debug' | 'info' | 'warn' | 'error' {
-  const parsed = LogLevelSchema.safeParse(value);
-  if (parsed.success) return parsed.data;
-  return 'info';
-}
-
-function parseList(value: string): string[] {
-  return value
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function requireString(
-  env: Record<string, string | undefined>,
+export function readString(
+  environment: Environment,
   key: string,
-  isProduction: boolean,
-  defaultValue?: string
+  options: StringReadOptions = {}
 ): string {
-  const value = env[key];
-  if (value !== undefined && value !== '') return value;
-  if (isProduction) {
-    throw new Error(`${key} is required in production`);
-  }
+  const value = normalizeOptionalString(environment[key], options);
+  if (value !== undefined) return value;
+
+  const defaultValue = normalizeOptionalString(options.defaultValue, options);
   if (defaultValue !== undefined) return defaultValue;
-  throw new Error(`${key} is required`);
+
+  throw createError(CONFIG_ISSUE_CODES.MISSING_VALUE, key, 'present');
 }
 
-function optionalString(value: string | undefined): string | undefined {
-  if (value === undefined || value === '') return undefined;
+export function readOptionalString(
+  environment: Environment,
+  key: string,
+  options: Pick<StringReadOptions, 'trim'> = {}
+): string | undefined {
+  return normalizeOptionalString(environment[key], options);
+}
+
+export function coerceBoolean(
+  value: string | undefined,
+  options: BooleanCoercionOptions = {}
+): boolean {
+  const key = options.key ?? 'value';
+  const normalized = normalizeOptionalString(value);
+  if (normalized === undefined) {
+    if (options.defaultValue !== undefined) return options.defaultValue;
+    throw createError(CONFIG_ISSUE_CODES.MISSING_VALUE, key, 'present');
+  }
+
+  const normalize =
+    options.caseSensitive === true ? identity : (item: string) => item.toLowerCase();
+  const candidate = normalize(normalized);
+  const trueValues = (options.trueValues ?? DEFAULT_TRUE_VALUES).map(normalize);
+  const falseValues = (options.falseValues ?? DEFAULT_FALSE_VALUES).map(normalize);
+
+  if (trueValues.includes(candidate)) return true;
+  if (falseValues.includes(candidate)) return false;
+  throw createError(CONFIG_ISSUE_CODES.INVALID_VALUE, key, 'a boolean');
+}
+
+export function readBoolean(
+  environment: Environment,
+  key: string,
+  options: Omit<BooleanCoercionOptions, 'key'> = {}
+): boolean {
+  return coerceBoolean(environment[key], { ...options, key });
+}
+
+export function coerceInteger(
+  value: string | undefined,
+  options: IntegerCoercionOptions = {}
+): number {
+  const key = options.key ?? 'value';
+  const normalized = normalizeOptionalString(value);
+  if (normalized === undefined) {
+    if (options.defaultValue !== undefined) {
+      return validateInteger(options.defaultValue, key, options);
+    }
+    throw createError(CONFIG_ISSUE_CODES.MISSING_VALUE, key, 'present');
+  }
+
+  if (!/^[+-]?\d+$/.test(normalized)) {
+    throw createError(CONFIG_ISSUE_CODES.INVALID_VALUE, key, integerExpectation(options));
+  }
+  return validateInteger(Number(normalized), key, options);
+}
+
+export function readInteger(
+  environment: Environment,
+  key: string,
+  options: Omit<IntegerCoercionOptions, 'key'> = {}
+): number {
+  return coerceInteger(environment[key], { ...options, key });
+}
+
+export function coerceStringList(
+  value: string | undefined,
+  options: StringListCoercionOptions = {}
+): string[] {
+  const key = options.key ?? 'value';
+  const normalized = normalizeOptionalString(value, { trim: false });
+  if (normalized === undefined) {
+    if (options.defaultValue !== undefined) return [...options.defaultValue];
+    throw createError(CONFIG_ISSUE_CODES.MISSING_VALUE, key, 'present');
+  }
+
+  const separator = options.separator ?? ',';
+  if (separator.length === 0) {
+    throw createError(CONFIG_ISSUE_CODES.INVALID_VALUE, key, 'parsed with a non-empty separator');
+  }
+
+  const values = normalized
+    .split(separator)
+    .map((item) => (options.trim === false ? item : item.trim()))
+    .filter((item) => options.omitEmpty === false || item.length > 0);
+
+  return options.unique === true ? [...new Set(values)] : values;
+}
+
+export function readStringList(
+  environment: Environment,
+  key: string,
+  options: Omit<StringListCoercionOptions, 'key'> = {}
+): string[] {
+  return coerceStringList(environment[key], { ...options, key });
+}
+
+export function coerceEnum<const Values extends readonly string[]>(
+  value: string | undefined,
+  values: Values,
+  options: EnumCoercionOptions<Values[number]> = {}
+): Values[number] {
+  const key = options.key ?? 'value';
+  const normalized = normalizeOptionalString(value);
+  if (normalized === undefined) {
+    if (options.defaultValue !== undefined) return options.defaultValue;
+    throw createError(CONFIG_ISSUE_CODES.MISSING_VALUE, key, 'present');
+  }
+  if ((values as readonly string[]).includes(normalized)) return normalized as Values[number];
+  throw createError(CONFIG_ISSUE_CODES.INVALID_VALUE, key, `one of: ${values.join(', ')}`);
+}
+
+export function readEnum<const Values extends readonly string[]>(
+  environment: Environment,
+  key: string,
+  values: Values,
+  options: Omit<EnumCoercionOptions<Values[number]>, 'key'> = {}
+): Values[number] {
+  return coerceEnum(environment[key], values, { ...options, key });
+}
+
+export function readRuntimeMode(
+  environment: Environment,
+  key = 'NODE_ENV',
+  defaultValue: RuntimeMode = 'development'
+): RuntimeMode {
+  return readEnum(environment, key, RUNTIME_MODES, { defaultValue });
+}
+
+export function defineConfigSchema<T extends object>(
+  keys: readonly string[],
+  parser: (environment: Environment) => T
+): ConfigSchema<T> {
+  assertNoDuplicateKeys(keys);
+  const frozenKeys = Object.freeze([...keys]);
+
+  return Object.freeze({
+    keys: frozenKeys,
+    parse(environment: Environment): T {
+      try {
+        return parser(environment);
+      } catch (error) {
+        if (isConfigurationError(error)) throw error;
+        throw createError(
+          CONFIG_ISSUE_CODES.SCHEMA_VALIDATION_FAILED,
+          '$schema',
+          'valid configuration'
+        );
+      }
+    },
+  });
+}
+
+export function composeConfigSchemas<const Schemas extends readonly ConfigSchema<object>[]>(
+  ...schemas: Schemas
+): ConfigSchema<ComposedSchemaOutput<Schemas>> {
+  const keys = schemas.flatMap((schema) => schema.keys);
+  assertNoDuplicateKeys(keys);
+
+  return defineConfigSchema<ComposedSchemaOutput<Schemas>>(keys, (environment) => {
+    const parts = schemas.map((schema) => schema.parse(environment));
+    return Object.assign({}, ...parts) as ComposedSchemaOutput<Schemas>;
+  });
+}
+
+export function assertKnownVariables(
+  environment: Environment,
+  knownKeys: readonly string[],
+  ignoredKeys: readonly string[] = []
+): void {
+  const allowed = new Set([...knownKeys, ...ignoredKeys]);
+  const issues = Object.keys(environment)
+    .filter((key) => environment[key] !== undefined && !allowed.has(key))
+    .sort()
+    .map((key) => ({
+      code: CONFIG_ISSUE_CODES.UNKNOWN_VARIABLE,
+      key,
+      expected: 'declared by the configuration schema',
+    }));
+
+  if (issues.length > 0) throw new ConfigurationError(issues);
+}
+
+export function validateEnvironment<T extends object>(
+  schema: ConfigSchema<T>,
+  environment: Environment,
+  options: EnvironmentValidationOptions = {}
+): T {
+  if (options.unknownVariables === 'reject') {
+    assertKnownVariables(environment, schema.keys, options.ignoredKeys);
+  }
+  return schema.parse(environment);
+}
+
+function identity(value: string): string {
   return value;
 }
 
-function assertProductionOrigins(envName: string, origins: string[]): void {
-  const invalidOrigins = origins.filter((origin) => origin.startsWith('http://localhost'));
-  if (invalidOrigins.length > 0) {
-    throw new Error(`${envName} cannot contain localhost origins in production`);
-  }
-}
-
-/**
- * Read and validate API configuration
- */
-export function readApiConfig(env: Record<string, string | undefined>): ApiConfig {
-  const nodeEnv = parseNodeEnv(env.NODE_ENV);
-  const isProduction = nodeEnv === 'production';
-  const port = Number(env.PORT ?? env.API_PORT ?? 3000);
-  const databaseUrl = requireString(env, 'DATABASE_URL', isProduction, LOCAL_DATABASE_URL);
-  const databaseSsl = parseBoolean(env.DATABASE_SSL, isProduction);
-  const appVersion = requireString(
-    env,
-    'APP_VERSION',
-    isProduction,
-    env.npm_package_version ?? '0.1.0'
-  );
-  const commitSha = requireString(env, 'COMMIT_SHA', isProduction, 'local');
-  const buildTime = env.BUILD_TIME ?? new Date().toISOString();
-  const corsAllowedOrigins = parseList(
-    requireString(
-      env,
-      'CORS_ALLOWED_ORIGINS',
-      isProduction,
-      env.AUTH_ALLOWED_ORIGINS ?? LOCAL_ORIGIN
-    )
-  );
-  const awsRegion = requireString(env, 'AWS_REGION', isProduction, 'us-east-1');
-  const awsS3Bucket = requireString(env, 'AWS_S3_BUCKET', isProduction, 'kokecore-local');
-  const logLevel = parseLogLevel(env.LOG_LEVEL ?? (isProduction ? 'info' : 'debug'));
-
-  if (!Number.isInteger(port) || port <= 0) {
-    throw new Error('PORT must be a positive integer');
-  }
-
-  if (isProduction && !databaseSsl) {
-    throw new Error('DATABASE_SSL must be true in production');
-  }
-
-  if (corsAllowedOrigins.length === 0) {
-    throw new Error('CORS_ALLOWED_ORIGINS must include at least one origin');
-  }
-  if (isProduction) {
-    assertProductionOrigins('CORS_ALLOWED_ORIGINS', corsAllowedOrigins);
-  }
-
-  const config = {
-    nodeEnv,
-    port,
-    databaseUrl,
-    databaseSsl,
-    appVersion,
-    commitSha,
-    buildTime,
-    corsAllowedOrigins,
-    awsRegion,
-    awsS3Bucket,
-    awsS3Endpoint: optionalString(env.AWS_S3_ENDPOINT),
-    awsCloudFrontDomain: optionalString(env.AWS_CLOUDFRONT_DOMAIN),
-    logLevel,
-    trustProxy: parseBoolean(env.TRUST_PROXY, false),
-    swaggerEnabled: isProduction
-      ? false
-      : parseStrictBoolean(env.SWAGGER_ENABLED, true, 'SWAGGER_ENABLED'),
-  };
-
-  return ApiConfigSchema.parse(config);
-}
-
-/**
- * Read and validate Auth configuration
- */
-export function readAuthConfig(env: Record<string, string | undefined>): AuthConfig {
-  const isProduction = parseNodeEnv(env.NODE_ENV) === 'production';
-  const jwtAccessSecret = requireString(
-    env,
-    'JWT_ACCESS_SECRET',
-    isProduction,
-    'dev-secret-change-in-production-min-32-chars'
-  );
-  const jwtRefreshSecret = requireString(
-    env,
-    'JWT_REFRESH_SECRET',
-    isProduction,
-    'dev-secret-change-in-production-min-32-chars'
-  );
-  const jwtAccessExpiresSeconds = Number(env.JWT_ACCESS_EXPIRES_SECONDS ?? 900);
-  const jwtRefreshExpiresSeconds = Number(env.JWT_REFRESH_EXPIRES_SECONDS ?? 2592000);
-  const cookieSecure = parseBoolean(env.COOKIE_SECURE, isProduction);
-  const authAllowedOrigins = parseList(
-    requireString(env, 'AUTH_ALLOWED_ORIGINS', isProduction, LOCAL_ORIGIN)
-  );
-
-  if (jwtAccessSecret.length < 32) {
-    throw new Error('JWT_ACCESS_SECRET must be at least 32 characters');
-  }
-  if (jwtRefreshSecret.length < 32) {
-    throw new Error('JWT_REFRESH_SECRET must be at least 32 characters');
-  }
-
-  const config = {
-    jwtAccessSecret,
-    jwtRefreshSecret,
-    jwtAccessExpiresSeconds,
-    jwtRefreshExpiresSeconds,
-    cookieSecure,
-    authAllowedOrigins,
-  };
-
-  return AuthConfigSchema.parse(config);
-}
-
-/**
- * Read and validate Organization configuration
- */
-export function readOrganizationConfig(
-  env: Record<string, string | undefined>
-): OrganizationConfig {
-  const isProduction = parseNodeEnv(env.NODE_ENV) === 'production';
-  const organizationInvitationExpiresSeconds = Number(
-    env.ORGANIZATION_INVITATION_EXPIRES_SECONDS ?? 259200
-  );
-  const appWebUrl = requireString(env, 'APP_WEB_URL', isProduction, LOCAL_ORIGIN);
-
+function validateInteger(value: number, key: string, options: IntegerCoercionOptions): number {
   if (
-    !Number.isInteger(organizationInvitationExpiresSeconds) ||
-    organizationInvitationExpiresSeconds <= 0
+    !Number.isSafeInteger(value) ||
+    (options.minimum !== undefined && value < options.minimum) ||
+    (options.maximum !== undefined && value > options.maximum)
   ) {
-    throw new Error('ORGANIZATION_INVITATION_EXPIRES_SECONDS must be a positive integer');
+    throw createError(CONFIG_ISSUE_CODES.INVALID_VALUE, key, integerExpectation(options));
   }
+  return value;
+}
 
-  if (isProduction) {
-    assertProductionOrigins('APP_WEB_URL', [appWebUrl]);
+function integerExpectation(options: IntegerCoercionOptions): string {
+  if (options.minimum !== undefined && options.maximum !== undefined) {
+    return `an integer between ${options.minimum} and ${options.maximum}`;
   }
-
-  const config = {
-    organizationInvitationExpiresSeconds,
-    appWebUrl,
-  };
-
-  return OrganizationConfigSchema.parse(config);
+  if (options.minimum !== undefined)
+    return `an integer greater than or equal to ${options.minimum}`;
+  if (options.maximum !== undefined) return `an integer less than or equal to ${options.maximum}`;
+  return 'an integer';
 }
 
-/**
- * Read and validate Password Recovery configuration
- */
-export function readPasswordRecoveryConfig(
-  env: Record<string, string | undefined>
-): PasswordRecoveryConfig {
-  const isProduction = parseNodeEnv(env.NODE_ENV) === 'production';
-  const appPublicUrl = requireString(env, 'APP_PUBLIC_URL', isProduction, LOCAL_ORIGIN);
-  const expiresMinutes = Number(env.PASSWORD_RECOVERY_EXPIRES_MINUTES ?? 30);
-  const emailVerificationExpiresMinutes = Number(env.EMAIL_VERIFICATION_EXPIRES_MINUTES ?? 1440);
-  const mailFrom = requireString(env, 'MAIL_FROM', isProduction, 'noreply@localhost');
-  const mailHost = requireString(env, 'MAIL_HOST', isProduction, 'localhost');
-  const mailPort = Number(env.MAIL_PORT ?? 587);
-  const mailSecure = parseBoolean(env.MAIL_SECURE, false);
-  const mailConnectionTimeoutMs = Number(env.MAIL_CONNECTION_TIMEOUT_MS ?? 6000);
-  const mailGreetingTimeoutMs = Number(env.MAIL_GREETING_TIMEOUT_MS ?? 5000);
-  const mailSocketTimeoutMs = Number(env.MAIL_SOCKET_TIMEOUT_MS ?? 5000);
-  const authEmailEnabled = parseBoolean(env.AUTH_EMAIL_ENABLED, true);
-  const commercialEmailEnabled = parseBoolean(env.COMMERCIAL_EMAIL_ENABLED, true);
-
-  const config = {
-    appPublicUrl,
-    expiresMinutes,
-    emailVerificationExpiresMinutes,
-    mailFrom,
-    mailHost,
-    mailPort,
-    mailSecure,
-    mailConnectionTimeoutMs,
-    mailGreetingTimeoutMs,
-    mailSocketTimeoutMs,
-    authEmailEnabled,
-    commercialEmailEnabled,
-    mailUser: optionalString(env.MAIL_USER),
-    mailPassword: optionalString(env.MAIL_PASSWORD),
-  };
-
-  return PasswordRecoveryConfigSchema.parse(config);
+function assertNoDuplicateKeys(keys: readonly string[]): void {
+  const seen = new Set<string>();
+  for (const key of keys) {
+    if (seen.has(key)) {
+      throw createError(
+        CONFIG_ISSUE_CODES.DUPLICATE_SCHEMA_KEY,
+        key,
+        'declared by only one configuration schema'
+      );
+    }
+    seen.add(key);
+  }
 }
 
-/**
- * Read and validate Product Integrations configuration
- */
-export function readProductIntegrationsConfig(
-  env: Record<string, string | undefined>
-): ProductIntegrationsConfig {
-  const whatsappMode = env.WHATSAPP_MODE === 'provider' ? 'provider' : 'manual';
-  const whatsappHashSecret = requireString(
-    env,
-    'WHATSAPP_HASH_SECRET',
-    false,
-    'dev-secret-must-be-at-least-32-characters-long'
-  );
-  const paymentGateway = env.PAYMENT_GATEWAY === 'production' ? 'production' : 'sandbox';
-  const paymentSandboxSecret = requireString(
-    env,
-    'PAYMENT_SANDBOX_SECRET',
-    false,
-    'dev-secret-must-be-at-least-32-characters-long'
-  );
-
-  const config = {
-    whatsappMode,
-    whatsappHashSecret,
-    paymentGateway,
-    paymentSandboxSecret,
-  };
-
-  return ProductIntegrationsConfigSchema.parse(config);
+function createError(code: ConfigIssueCode, key: string, expected: string): ConfigurationError {
+  return new ConfigurationError([{ code, key, expected }]);
 }
 
-/**
- * Read and validate Redis configuration
- */
-export function readRedisConfig(env: Record<string, string | undefined>): RedisConfig {
-  const url = requireString(env, 'REDIS_URL', false, 'redis://localhost:6379');
-  const rateLimitHashSecret = requireString(
-    env,
-    'RATE_LIMIT_HASH_SECRET',
-    false,
-    'dev-secret-must-be-at-least-32-characters-long'
-  );
-  const rateLimitPrefix = env.RATE_LIMIT_PREFIX ?? 'rate_limit';
-  const authDeliveryPrefix = env.AUTH_DELIVERY_PREFIX ?? 'auth_delivery';
-
-  const config = {
-    url,
-    rateLimitHashSecret,
-    rateLimitPrefix,
-    authDeliveryPrefix,
-  };
-
-  return RedisConfigSchema.parse(config);
-}
-
-/**
- * Read complete runtime configuration
- */
-export function readRuntimeConfig(
-  env: Record<string, string | undefined>
-): RuntimeEnvironmentConfig {
-  return {
-    api: readApiConfig(env),
-    auth: readAuthConfig(env),
-    organization: readOrganizationConfig(env),
-    passwordRecovery: readPasswordRecoveryConfig(env),
-    productIntegrations: readProductIntegrationsConfig(env),
-    redis: readRedisConfig(env),
-  };
+function formatIssue(issue: ConfigIssue): string {
+  switch (issue.code) {
+    case CONFIG_ISSUE_CODES.MISSING_VALUE:
+      return `${issue.key} is required`;
+    case CONFIG_ISSUE_CODES.INVALID_VALUE:
+      return `${issue.key} must be ${issue.expected}`;
+    case CONFIG_ISSUE_CODES.UNKNOWN_VARIABLE:
+      return `${issue.key} is not allowed`;
+    case CONFIG_ISSUE_CODES.DUPLICATE_SCHEMA_KEY:
+      return `${issue.key} must be ${issue.expected}`;
+    case CONFIG_ISSUE_CODES.SCHEMA_VALIDATION_FAILED:
+      return `Configuration schema must produce ${issue.expected}`;
+  }
 }

@@ -1,40 +1,70 @@
 # @kokecore/config
 
-Type-safe environment configuration with validation and schema support.
+Product-neutral environment readers, primitive coercion, and typed schema
+composition for Node.js applications.
 
-## Features
+## Runtime
 
-- Environment variable parsing with sensible defaults
-- Zod schema validation
-- Production-specific safety checks
-- CORS origin validation
-- Type-safe configuration objects
+- Node.js `>=22 <25`
+- pnpm `>=8 <10` for internal package workflows
 
-## Internal consumption
+## Certified public API
 
-Install only from a CI-validated internal tarball. Public registry installation
-is prohibited.
+The package root exposes:
+
+- safe required and optional string readers;
+- boolean, integer, list, enum, and runtime-mode coercion;
+- typed schema definition and composition;
+- optional rejection of unknown variables;
+- `ConfigurationError` with value-safe issue codes and messages.
+
+It does not define application variable names, product defaults, deployment
+policy, credentials, routes, or business schemas.
 
 ## Usage
 
 ```typescript
-import { readRuntimeConfig, readApiConfig } from '@kokecore/config';
+import {
+  defineConfigSchema,
+  readBoolean,
+  readInteger,
+  readString,
+  validateEnvironment,
+} from '@kokecore/config';
 
-const config = readRuntimeConfig(process.env);
-console.log(config.api.port);
-console.log(config.auth.jwtAccessSecret);
+const serviceSchema = defineConfigSchema(
+  ['SERVICE_HOST', 'SERVICE_PORT', 'FEATURE_ENABLED'],
+  (environment) => ({
+    host: readString(environment, 'SERVICE_HOST'),
+    port: readInteger(environment, 'SERVICE_PORT', {
+      defaultValue: 3000,
+      minimum: 1,
+      maximum: 65535,
+    }),
+    featureEnabled: readBoolean(environment, 'FEATURE_ENABLED', {
+      defaultValue: false,
+    }),
+  })
+);
+
+const config = validateEnvironment(serviceSchema, process.env);
 ```
 
-## Configuration Modules
+Reject unknown variables only when the supplied environment object has already
+been scoped to the application contract:
 
-- `readApiConfig(env)` - API configuration
-- `readAuthConfig(env)` - Authentication configuration
-- `readOrganizationConfig(env)` - Organization configuration
-- `readPasswordRecoveryConfig(env)` - Email/recovery configuration
-- `readProductIntegrationsConfig(env)` - Integrations configuration
-- `readRedisConfig(env)` - Redis configuration
-- `readRuntimeConfig(env)` - Complete configuration
+```typescript
+const config = validateEnvironment(serviceSchema, scopedEnvironment, {
+  unknownVariables: 'reject',
+});
+```
 
-## Environment Variables
+Invalid input values are never included in `ConfigurationError.message` or its
+typed `issues`. Consumers may log the key, code, and expected constraint without
+logging the rejected value.
 
-See `src/index.ts` for the full list of supported variables.
+## Distribution
+
+Install only from the immutable, checksum-verified internal Alpha artifact.
+Public registry publication and deep imports are prohibited. Import exclusively
+from `@kokecore/config`.

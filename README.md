@@ -28,7 +28,7 @@ approved consumption. Each library is designed to be:
 
 ### @kokecore/config
 
-Type-safe environment configuration with validation and schema support.
+Product-neutral environment readers, coercion, and typed schema composition.
 
 ### @kokecore/errors
 
@@ -77,10 +77,13 @@ pnpm package:validate
 ### @kokecore/config
 
 ```typescript
-import { readApiConfig } from '@kokecore/config';
+import { defineConfigSchema, readInteger, validateEnvironment } from '@kokecore/config';
 
-const config = readApiConfig(process.env);
-// Fully typed configuration with validation
+const serverSchema = defineConfigSchema(['PORT'], (environment) => ({
+  port: readInteger(environment, 'PORT', { defaultValue: 3000, minimum: 1 }),
+}));
+
+const config = validateEnvironment(serverSchema, process.env);
 ```
 
 ### @kokecore/auth

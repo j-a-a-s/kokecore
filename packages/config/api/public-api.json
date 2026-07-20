@@ -4,74 +4,154 @@
   "entry": "dist/public.d.ts",
   "exports": [
     {
-      "name": "ApiConfig",
-      "kind": "TypeAliasDeclaration",
-      "signatureHash": "f9288e79257211a3908fdc295e8e19bf141f61be7eceecbeac88832af1ef0406"
-    },
-    {
-      "name": "AuthConfig",
-      "kind": "TypeAliasDeclaration",
-      "signatureHash": "2609f7b6b23921c238e3ac90bd35b210e310a15512bc4fad7495823d6abcc4d5"
-    },
-    {
-      "name": "OrganizationConfig",
-      "kind": "TypeAliasDeclaration",
-      "signatureHash": "dcf59a2173822c1c44faa120418cc31c442673398011dcdb95684b81bbb40561"
-    },
-    {
-      "name": "PasswordRecoveryConfig",
-      "kind": "TypeAliasDeclaration",
-      "signatureHash": "b39dc132f2b1167d8fb78e66abbe63da17f3e781bcbce046cb10730892d199e4"
-    },
-    {
-      "name": "ProductIntegrationsConfig",
-      "kind": "TypeAliasDeclaration",
-      "signatureHash": "cdfd9bc3900cd93c3cdc1f65e580b544a623cf51f5281c83a87f96bf4a1d8e10"
-    },
-    {
-      "name": "readApiConfig",
+      "name": "assertKnownVariables",
       "kind": "FunctionDeclaration",
-      "signatureHash": "7e105a46bda35df4c82fe0e61b27ac11a55cef837b5176f6d61746b43be1bb80"
+      "signatureHash": "a3594ab0c2ee6463c2cfdf39ddf1e5587f91fe2b100ee590d352b9d597d819f5"
     },
     {
-      "name": "readAuthConfig",
-      "kind": "FunctionDeclaration",
-      "signatureHash": "66087832bbfffd6d1a2beba28c2848e10d85c407bdd6520b740a1bd8f5863993"
-    },
-    {
-      "name": "readOrganizationConfig",
-      "kind": "FunctionDeclaration",
-      "signatureHash": "76e7af6d337957023e1a3df826acb1978810c08864563259493484d990154d6e"
-    },
-    {
-      "name": "readPasswordRecoveryConfig",
-      "kind": "FunctionDeclaration",
-      "signatureHash": "0cf6dd756543d6af6b777c314e92639ce656c0048278c96fc65c3aada1d445c3"
-    },
-    {
-      "name": "readProductIntegrationsConfig",
-      "kind": "FunctionDeclaration",
-      "signatureHash": "3ade0f95613bcf092aa4add24b80c369df1ac4e71bd31a3284f7d9318139e150"
-    },
-    {
-      "name": "readRedisConfig",
-      "kind": "FunctionDeclaration",
-      "signatureHash": "99dcaabd8d8f33cd7bb28da37637864016e9efba35ca5cadbba9d995fe827605"
-    },
-    {
-      "name": "readRuntimeConfig",
-      "kind": "FunctionDeclaration",
-      "signatureHash": "ca6629bd0b3e24dcba1d21d7f92bfa1c7d4b38257bc99a6e97f754f0735a361d"
-    },
-    {
-      "name": "RedisConfig",
-      "kind": "TypeAliasDeclaration",
-      "signatureHash": "8ba62541fd1e828e83595f45132065e488da7f4adfdfaada6c27aabe39490166"
-    },
-    {
-      "name": "RuntimeEnvironmentConfig",
+      "name": "BooleanCoercionOptions",
       "kind": "InterfaceDeclaration",
-      "signatureHash": "6788c4fb1c8c71fbad798f13c9fe587f13d9386ab115f35831d72f779f58091e"
+      "signatureHash": "8e09cad59ba7e0781c951cd30d6e38586b91d62e72ca90df7fcff14ade26990c"
+    },
+    {
+      "name": "coerceBoolean",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "265e0c9907a04fc4b546aa1fac83e7b4edde124e85e9522a453bc4e5da7b46f4"
+    },
+    {
+      "name": "coerceEnum",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "34e133238b6c75b2ce348bdf8728af05000ddfc887492f559ba750e9dfef09b7"
+    },
+    {
+      "name": "coerceInteger",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "6271fd469e66265cd534fdc812fef7c7facb8f483e78a8906470e179aece72af"
+    },
+    {
+      "name": "coerceStringList",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "0b172fb41004d4b3588c4d8060f2b92ee13f7b9d78c64b7e77f8aac5a8fd2dda"
+    },
+    {
+      "name": "composeConfigSchemas",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "b96071fb58e77b766192acb5598f166869d521ca5383dfbbe7e2502086cab12d"
+    },
+    {
+      "name": "CONFIG_ISSUE_CODES",
+      "kind": "VariableDeclaration",
+      "signatureHash": "042bf8e24a12964065ffeca860074fb38d5d0dad7ea5e182b3e195be236d7500"
+    },
+    {
+      "name": "ConfigIssue",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "8f1b6491c1325b0e7676a60df2c81fe5b9dc31c648bd85ecc889154a3fcc2dba"
+    },
+    {
+      "name": "ConfigIssueCode",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "acefb29b0bd4784420de7c030cf67267b48c1c13acd0fe5f5b78f4815c4af347"
+    },
+    {
+      "name": "ConfigSchema",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "2c17735344ff675555dcdbc4ea6ed3a7b71d3d8b3fc8b30adc1c4e03f6643106"
+    },
+    {
+      "name": "ConfigurationError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "c952f291b5c849be4aa1b4f738f5ece314cb650d4f5158ae132d34afb27e20b0"
+    },
+    {
+      "name": "defineConfigSchema",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "bdf915e2606ba2de06b6b3a2a060a5767fd95c8774ccb6cdda6f82142e47dae0"
+    },
+    {
+      "name": "EnumCoercionOptions",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "41029413c3924387b79e1acb9a06d7b874d9444859aa61fc3fe87f8d2d96dbf6"
+    },
+    {
+      "name": "Environment",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "e10d26fde8bb8951b90878c58fdda3c901a1d6327d92a98ef355ae9b023d06f9"
+    },
+    {
+      "name": "EnvironmentValidationOptions",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "09d232cc19e1b5b4bcd2cd39242015875897bea5f1f06fed93eef96f599ca68b"
+    },
+    {
+      "name": "IntegerCoercionOptions",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "dd14aa112f732a1ef559abe2849f68b0a1e96d8deed3123f8e297d67cbb43c6a"
+    },
+    {
+      "name": "isConfigurationError",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "e1715d63774bba941f70f5c3f4fe3d309b05abad8eedffdba00c5c9382f03aac"
+    },
+    {
+      "name": "normalizeOptionalString",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "7d93024970f64e8bd4b540d87dea0aba428570070ac09bfbdd9d7d00fc34ffb3"
+    },
+    {
+      "name": "readBoolean",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "cd4295c8e4f73dbe393d6d5fd362f79bd866b15e5d376ce370c5d983c2a1d840"
+    },
+    {
+      "name": "readEnum",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "0b0640d23eb1fef76b4e1553cb4d039c20415fb6679d05a928cf4b33cb50d6a7"
+    },
+    {
+      "name": "readInteger",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "e69e0d6183e7eb726c77c909f1ce97528e96c40d187d9a6f84f1c5665db10b0a"
+    },
+    {
+      "name": "readOptionalString",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "f994e9631b2680e84ff55efb7f92c31956167e5fa18ee5f9f0e696352b74ef07"
+    },
+    {
+      "name": "readRuntimeMode",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "8a4c2d8cf96d1190f1e25b2adb1ef523f3dff9d60de48156788edf68b2deb2c3"
+    },
+    {
+      "name": "readString",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "6b6cba5c45308a81857ce7a053a51cdabf55bef344f4de260ed5a9d433e17ac7"
+    },
+    {
+      "name": "readStringList",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "bc8e3b4acdcc490caa4252070a14d99f61d09dd5e14336fec9b6a1ae60d87639"
+    },
+    {
+      "name": "RuntimeMode",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "7b00e1a7a91526f4ea37447a9cdfbdd73b18dae7d3c507341376487b48639dfe"
+    },
+    {
+      "name": "StringListCoercionOptions",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "d751859b34138a2baff7e1e260ec7ca27c70fdda4da2473a126c07965b1e5466"
+    },
+    {
+      "name": "StringReadOptions",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "1cdea3fe5f108f781f28966f50bc2d0177b949b57dbf21b6f8406f257b9440b3"
+    },
+    {
+      "name": "validateEnvironment",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "38a4e030a62ba370723088272c28e35c9e54459086a19135b3079432a8adf82b"
     }
   ]
 }

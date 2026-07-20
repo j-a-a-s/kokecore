@@ -15,65 +15,63 @@ Kaklen currently contains several cross-cutting concerns embedded in `apps/api` 
 - `apps/api` validation patterns → `@kokecore/validation`
 - New calendar integration → `@kokecore/calendar`
 
-## Step 1: Publish Kokecore
+## Step 1: Create an approved internal artifact
 
-Before Kaklen can consume the libraries, publish them to your private registry or npm:
+During Alpha, packages are not published to a public registry. Build and validate
+an immutable internal tarball instead:
 
 ```bash
-cd /Users/jorgealarcon/CascadeProjects/kokecore
-pnpm install
+pnpm install --frozen-lockfile
 pnpm build
-pnpm changeset
-pnpm release
-pnpm release:publish
+pnpm --filter @kokecore/config pack
 ```
 
-Or, for local development, link packages with pnpm:
-
-```bash
-cd /Users/jorgealarcon/CascadeProjects/kokecore
-pnpm link --global
-
-cd /path/to/kaklen
-pnpm link --global @kokecore/config @kokecore/auth @kokecore/errors @kokecore/logging @kokecore/rbac @kokecore/storage @kokecore/validation @kokecore/calendar
-```
+The Config certification process records the artifact checksum and installs the
+tarball into a clean Kaklen checkout. Local links are not valid release evidence.
 
 ## Step 2: Update Kaklen Dependencies
 
-Add to Kaklen root `package.json` or `apps/api/package.json`:
+Replace only the approved package dependency with its internal artifact. Packages
+that have not completed their individual consumption gate remain unchanged.
 
 ```json
 {
   "dependencies": {
-    "@kokecore/config": "workspace:*",
-    "@kokecore/errors": "workspace:*",
-    "@kokecore/logging": "workspace:*",
-    "@kokecore/auth": "workspace:*",
-    "@kokecore/storage": "workspace:*",
-    "@kokecore/rbac": "workspace:*",
-    "@kokecore/validation": "workspace:*",
-    "@kokecore/calendar": "workspace:*"
+    "@kokecore/config": "file:../../vendor/kokecore/config/kokecore-config-0.2.0.tgz"
   }
 }
 ```
 
-For published versions, replace `workspace:*` with the version range.
-
 ## Step 3: Replace Configuration
 
-### Before (Kaklen)
+Kaklen retains its application schemas, defaults, and policy. It delegates only
+neutral parsing mechanics to Config.
+
+### Application-owned schema using neutral helpers
 
 ```typescript
-import { readApiConfig } from '@kaklen/config';
+import { coerceInteger, readString, type Environment } from '@kokecore/config';
+
+interface ApiConfig {
+  port: number;
+  databaseUrl: string;
+}
+
+export function readApiConfig(environment: Environment): ApiConfig {
+  return {
+    port: coerceInteger(environment.PORT, {
+      key: 'PORT',
+      defaultValue: 3000,
+      minimum: 1,
+      maximum: 65535,
+    }),
+    databaseUrl: readString(environment, 'DATABASE_URL'),
+  };
+}
 ```
 
-### After (Kokecore)
-
-```typescript
-import { readApiConfig, readRuntimeConfig } from '@kokecore/config';
-```
-
-Kokecore config adds Zod schemas on top of the manual validation. No runtime API changes are required; however, error messages are more descriptive.
+Do not move JWT, CORS, database, Redis, mail, or integration policy into KOKE
+CORE. See `docs/config/KAKLEN_CONFIG_INTEGRATION.md` for the certified boundary.
 
 ## Step 4: Replace Error Handling
 
