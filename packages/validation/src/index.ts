@@ -11,6 +11,7 @@
  * - PII masking
  */
 
+import { URL } from 'node:url';
 import { z } from 'zod';
 import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js';
 import { isValid as isValidIBAN, electronicFormat as formatIBAN } from 'iban';
@@ -391,8 +392,8 @@ export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): Validati
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(
-        (err) => new ValidationError(err.path.join('.'), err.message, err)
+      const errors = error.issues.map(
+        (issue) => new ValidationError(issue.path.join('.'), issue.message, issue)
       );
       return {
         success: false,
@@ -446,8 +447,8 @@ export function validateWithContext<T>(
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(
-        (err) => new ValidationError(err.path.join('.'), err.message, err)
+      const errors = error.issues.map(
+        (issue) => new ValidationError(issue.path.join('.'), issue.message, issue)
       );
       return {
         success: false,
