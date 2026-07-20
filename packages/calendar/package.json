@@ -46,7 +46,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@azure/msal-node": "^2.0.0",
+    "@azure/msal-node": "^5.4.1",
     "@microsoft/microsoft-graph-client": "^3.0.5",
     "date-fns": "^2.30.0",
     "googleapis": "^128.0.0",

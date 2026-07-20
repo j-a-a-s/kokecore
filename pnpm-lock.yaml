@@ -91,8 +91,8 @@ importers:
   packages/calendar:
     dependencies:
       '@azure/msal-node':
-        specifier: ^2.0.0
-        version: 2.16.3
+        specifier: ^5.4.1
+        version: 5.4.1
       '@microsoft/microsoft-graph-client':
         specifier: ^3.0.5
         version: 3.0.7
@@ -698,18 +698,17 @@ packages:
       - supports-color
     dev: false
 
-  /@azure/msal-common@14.16.1:
-    resolution: {integrity: sha512-nyxsA6NA4SVKh5YyRpbSXiMr7oQbwark7JU9LMeg6tJYTSPyAGkdx61wPT4gyxZfxlSxMMEyAsWaubBlNyIa1w==}
+  /@azure/msal-common@16.11.2:
+    resolution: {integrity: sha512-yDhtBOGDCdK9ipQ9g3+wmlMEPnZx2pXaDicDd9jYyR1L+7lEbvEohTDmF5qejZDutZY3m9pWPxeYxzNC701A2w==}
     engines: {node: '>=0.8.0'}
     dev: false
 
-  /@azure/msal-node@2.16.3:
-    resolution: {integrity: sha512-CO+SE4weOsfJf+C5LM8argzvotrXw252/ZU6SM2Tz63fEblhH1uuVaaO4ISYFuN4Q6BhTo7I3qIdi8ydUQCqhw==}
-    engines: {node: '>=16'}
+  /@azure/msal-node@5.4.1:
+    resolution: {integrity: sha512-yqgoyOIMCH7TNaSLMBTP+4LUlbMMf1zgC8nzOFG95lmW82CmsAEtUT0J93e4BdqDcnX5qle/9X+yb7A8Mw9M0g==}
+    engines: {node: '>=20'}
     dependencies:
-      '@azure/msal-common': 14.16.1
+      '@azure/msal-common': 16.11.2
       jsonwebtoken: 9.0.3
-      uuid: 8.3.2
     dev: false
 
   /@azure/storage-blob@12.33.0:
@@ -6050,12 +6049,6 @@ packages:
   /utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
-    dev: false
-
-  /uuid@8.3.2:
-    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
-    hasBin: true
     dev: false
 
   /uuid@9.0.1:
