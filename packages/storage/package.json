@@ -1,0 +1,58 @@
+{
+  "name": "@kokecore/storage",
+  "version": "0.2.0",
+  "description": "Multi-cloud storage abstraction with S3, Azure, GCS, and MinIO support",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "storage",
+    "s3",
+    "azure",
+    "gcs",
+    "minio",
+    "file-upload",
+    "typescript"
+  ],
+  "author": "Kokecore Contributors",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^22.15.32",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
+    "@typescript-eslint/parser": "^8.64.0",
+    "eslint": "^10.7.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.470.0",
+    "@aws-sdk/s3-request-presigner": "^3.470.0",
+    "@azure/storage-blob": "^12.17.0",
+    "@google-cloud/storage": "^7.7.0",
+    "minio": "^7.1.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

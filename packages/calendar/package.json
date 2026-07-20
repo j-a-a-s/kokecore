@@ -1,0 +1,60 @@
+{
+  "name": "@kokecore/calendar",
+  "version": "0.2.0",
+  "description": "Enterprise calendar synchronization with Google Calendar, Microsoft Graph, and Apple Calendar",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "calendar",
+    "google-calendar",
+    "outlook",
+    "microsoft-graph",
+    "apple-calendar",
+    "sync",
+    "typescript"
+  ],
+  "author": "Kokecore Contributors",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^22.15.32",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
+    "@typescript-eslint/parser": "^8.64.0",
+    "eslint": "^10.7.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^2.0.0",
+    "@microsoft/microsoft-graph-client": "^3.0.5",
+    "date-fns": "^2.30.0",
+    "googleapis": "^128.0.0",
+    "isomorphic-fetch": "^3.0.0",
+    "rrule": "^2.7.2",
+    "zod": "^3.22.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
