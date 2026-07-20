@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
-    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "argon2": "^0.45.0",
     "passport": "^0.7.0",

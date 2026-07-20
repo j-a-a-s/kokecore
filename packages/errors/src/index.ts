@@ -203,7 +203,10 @@ export class KokecoreError extends Error {
     this.resourceId = context?.resourceId;
     this.timestamp = context?.timestamp || new Date().toISOString();
 
-    Error.captureStackTrace(this, this.constructor);
+    const errorConstructor = Error as ErrorConstructor & {
+      captureStackTrace?: (targetObject: object, constructorOpt?: object) => void;
+    };
+    errorConstructor.captureStackTrace?.(this, this.constructor);
   }
 
   toJSON(): ErrorResponse {
