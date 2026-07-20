@@ -3,7 +3,8 @@
 Internal reusable libraries for KOKE GROUP Node.js/TypeScript applications.
 
 > **Alpha:** every package is private and `UNLICENSED`. Public npm publishing
-> is blocked. No package is declared stable or production-ready.
+> is blocked. `@kokecore/config` is stable only for certified internal
+> consumption; no package is approved for public distribution.
 
 ## Runtime requirements
 
@@ -135,6 +136,7 @@ The binding package controls are documented in:
 - [Public API policy](docs/PUBLIC_API_POLICY.md)
 - [Package maturity](docs/PACKAGE_MATURITY.md)
 - [Kaklen consumption gate](docs/KAKLEN_CONSUMPTION_GATE.md)
+- [Certified Config consumption gate](docs/config/CONFIG_CONSUMPTION_GATE.md)
 
 ## Contributing
 
