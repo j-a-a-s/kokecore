@@ -18,6 +18,7 @@
     "typecheck": "turbo run typecheck",
     "api:verify": "node scripts/verify-public-api.mjs",
     "api:snapshot": "node scripts/update-public-api-snapshots.mjs",
+    "config:artifact": "node scripts/certify-config-artifact.mjs",
     "package:validate": "node scripts/verify-package-contents.mjs",
     "security:audit": "pnpm audit --audit-level high",
     "security:licenses": "node scripts/verify-licenses.mjs",
