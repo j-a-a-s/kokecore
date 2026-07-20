@@ -469,7 +469,7 @@ const permissionMetadata = new WeakMap<object, Permission[]>();
  * Permission decorator for NestJS (if using NestJS)
  */
 export function RequirePermissions(...permissions: Permission[]) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor) {
     permissionMetadata.set(descriptor.value, permissions);
     return descriptor;
   };
@@ -478,7 +478,7 @@ export function RequirePermissions(...permissions: Permission[]) {
 /**
  * Get required permissions from metadata
  */
-export function getRequiredPermissions(target: any): Permission[] {
+export function getRequiredPermissions(target: object): Permission[] {
   return permissionMetadata.get(target) || [];
 }
 

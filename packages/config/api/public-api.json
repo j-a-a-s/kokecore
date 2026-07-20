@@ -1,0 +1,77 @@
+{
+  "package": "@kokecore/config",
+  "version": "0.2.0",
+  "entry": "dist/public.d.ts",
+  "exports": [
+    {
+      "name": "ApiConfig",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "f9288e79257211a3908fdc295e8e19bf141f61be7eceecbeac88832af1ef0406"
+    },
+    {
+      "name": "AuthConfig",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "2609f7b6b23921c238e3ac90bd35b210e310a15512bc4fad7495823d6abcc4d5"
+    },
+    {
+      "name": "OrganizationConfig",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "dcf59a2173822c1c44faa120418cc31c442673398011dcdb95684b81bbb40561"
+    },
+    {
+      "name": "PasswordRecoveryConfig",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "b39dc132f2b1167d8fb78e66abbe63da17f3e781bcbce046cb10730892d199e4"
+    },
+    {
+      "name": "ProductIntegrationsConfig",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "cdfd9bc3900cd93c3cdc1f65e580b544a623cf51f5281c83a87f96bf4a1d8e10"
+    },
+    {
+      "name": "readApiConfig",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "7e105a46bda35df4c82fe0e61b27ac11a55cef837b5176f6d61746b43be1bb80"
+    },
+    {
+      "name": "readAuthConfig",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "66087832bbfffd6d1a2beba28c2848e10d85c407bdd6520b740a1bd8f5863993"
+    },
+    {
+      "name": "readOrganizationConfig",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "76e7af6d337957023e1a3df826acb1978810c08864563259493484d990154d6e"
+    },
+    {
+      "name": "readPasswordRecoveryConfig",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "0cf6dd756543d6af6b777c314e92639ce656c0048278c96fc65c3aada1d445c3"
+    },
+    {
+      "name": "readProductIntegrationsConfig",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "3ade0f95613bcf092aa4add24b80c369df1ac4e71bd31a3284f7d9318139e150"
+    },
+    {
+      "name": "readRedisConfig",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "99dcaabd8d8f33cd7bb28da37637864016e9efba35ca5cadbba9d995fe827605"
+    },
+    {
+      "name": "readRuntimeConfig",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "ca6629bd0b3e24dcba1d21d7f92bfa1c7d4b38257bc99a6e97f754f0735a361d"
+    },
+    {
+      "name": "RedisConfig",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "8ba62541fd1e828e83595f45132065e488da7f4adfdfaada6c27aabe39490166"
+    },
+    {
+      "name": "RuntimeEnvironmentConfig",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "6788c4fb1c8c71fbad798f13c9fe587f13d9386ab115f35831d72f779f58091e"
+    }
+  ]
+}

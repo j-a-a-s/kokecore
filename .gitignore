@@ -39,8 +39,5 @@ pnpm-debug.log*
 # Turbo
 .turbo/
 
-# Changesets - keep config, ignore generated changeset files
-.changeset/*.md
-.changeset/*.json
-!.changeset/config.json
-!.changeset/README.md
+# Generated supply-chain artifacts
+artifacts/

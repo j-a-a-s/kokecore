@@ -1,0 +1,27 @@
+{
+  "package": "@kokecore/calendar",
+  "version": "0.3.0-beta.0",
+  "entry": "dist/public.d.ts",
+  "exports": [
+    {
+      "name": "CalendarEvent",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "e7dfe38c35e6cc49515c7e343fb89bb142a88db08cab37320d5e7066397775de"
+    },
+    {
+      "name": "CalendarProvider",
+      "kind": "EnumDeclaration",
+      "signatureHash": "3e1aa2142472ea6288aed9de775b769b6778243e4546695f47e4f1621c5da33d"
+    },
+    {
+      "name": "EventStatus",
+      "kind": "EnumDeclaration",
+      "signatureHash": "ab085a46cc1c5b7a32c8579a1e54978792f17bfa653a6397fcbe404b44e85d03"
+    },
+    {
+      "name": "RecurrenceRule",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "d2d254211752af220ab28c94d311f158092a66c208a52951387dc7bd3dc70af1"
+    }
+  ]
+}

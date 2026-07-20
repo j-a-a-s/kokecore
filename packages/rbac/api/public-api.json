@@ -1,0 +1,122 @@
+{
+  "package": "@kokecore/rbac",
+  "version": "0.2.0",
+  "entry": "dist/public.d.ts",
+  "exports": [
+    {
+      "name": "ABACContext",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "1b9a14a56160d0403de75cab3fc5868e5715e97cb7c0bcdeba16d345ffce282a"
+    },
+    {
+      "name": "ABACEngine",
+      "kind": "ClassDeclaration",
+      "signatureHash": "817ec7650203d9b6a75af825b3b61ea4a79c91d64de74e67e6b1a6f563eec4e2"
+    },
+    {
+      "name": "AttributeRule",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "4bed727eaede1125f3341a8af9a66ec8b0be831e9c002df5e339f0bd28d760e5"
+    },
+    {
+      "name": "diffPermissions",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "2d0f79c0a6ba43bbf12b80a86c18ba1b9c3982b5b81e11329046e8b47c22da28"
+    },
+    {
+      "name": "getRequiredPermissions",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "46e3278b0e4f7beb8664766f3a86bef089c30086a4a6479eaa0ce0ae25452229"
+    },
+    {
+      "name": "Permission",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "0a2bb152e135a6a118805501a9b08b35db7faacb0f5814dfe2b84a5c4baf7b56"
+    },
+    {
+      "name": "PERMISSION_HIERARCHY",
+      "kind": "VariableDeclaration",
+      "signatureHash": "a8790efa5c245a4ad14709b941fc4e02c31061e1330a6a1808298c6a85d48828"
+    },
+    {
+      "name": "PermissionAuditEntry",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "00fba12b6b11e183dbcbe2a3e214df4b81bdd9afd6b3c4b9fb9a438d4458c7ec"
+    },
+    {
+      "name": "PermissionAuditor",
+      "kind": "ClassDeclaration",
+      "signatureHash": "85841f30f857728a911a5d941ff416cc673a1773be98dab724f663f764e13c5f"
+    },
+    {
+      "name": "PermissionCache",
+      "kind": "ClassDeclaration",
+      "signatureHash": "3b10f7c89eaab1f149352d4e8aa1b0041ab5386cbf58f1516b45f70561eb6b94"
+    },
+    {
+      "name": "PermissionChecker",
+      "kind": "ClassDeclaration",
+      "signatureHash": "da162a689d9234c42ce73044aeb56be2cf37a06bc0cf845bcca153170c7b3bfe"
+    },
+    {
+      "name": "PermissionDiff",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "2a8c320e9c6f81d4bfab97fb71fdb3f119087c0457ac809302b689eeb44d2c1b"
+    },
+    {
+      "name": "PERMISSIONS",
+      "kind": "VariableDeclaration",
+      "signatureHash": "934ce33e9cd4e6e4e795d9a7eaeb6bc0c50ddc689b4a62c338077d1240a432b1"
+    },
+    {
+      "name": "permissionSchema",
+      "kind": "VariableDeclaration",
+      "signatureHash": "1f49db2673b0272ba0fe866cb8155b301690fe4214d1c26334abbbb2490ab0e5"
+    },
+    {
+      "name": "permissionsForRole",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "3f906a589463537589d6794792b0a0d70537e7fa9a43fbdb75c43424cc5cbf78"
+    },
+    {
+      "name": "permissionsSchema",
+      "kind": "VariableDeclaration",
+      "signatureHash": "803caad13f534f18ccc05e8245b0f82ddfaea61f257fac620f2d7e82cf54d947"
+    },
+    {
+      "name": "PermissionTemplates",
+      "kind": "VariableDeclaration",
+      "signatureHash": "0563acba05f02bbf54eff6030a01c2613785cea4f5acea7eb391ba563858828c"
+    },
+    {
+      "name": "RequirePermissions",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "13ea60449adbe54f49e9536dc8db6a5cce07b1372fc8df545f75b0815655f22e"
+    },
+    {
+      "name": "Role",
+      "kind": "EnumDeclaration",
+      "signatureHash": "b505617da3da3e9c69fc073edb39a7f9619be783163d3d6bbddfda37faf2e276"
+    },
+    {
+      "name": "ROLE_PERMISSIONS",
+      "kind": "VariableDeclaration",
+      "signatureHash": "7858368e4865eea52861a1b2ef21774c6b961971e2966f58d7955d76e46dea13"
+    },
+    {
+      "name": "roleHasPermission",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "a69d6c90093f476a151a68202329ebb259bc26cf0d5291de135b50fdc70051c5"
+    },
+    {
+      "name": "roleHasPermissions",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "be586b0bc5bdfda37e6376a8abcefa71f62a38a97f96fcf34e401d31e3e4fcd1"
+    },
+    {
+      "name": "roleSchema",
+      "kind": "VariableDeclaration",
+      "signatureHash": "148dc8573f759f10b706eefebe0eb38cbc808c6f4e364ac100ae5dd61c9b94ea"
+    }
+  ]
+}

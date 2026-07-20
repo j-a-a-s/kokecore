@@ -1,0 +1,97 @@
+{
+  "package": "@kokecore/logging",
+  "version": "0.2.0",
+  "entry": "dist/public.d.ts",
+  "exports": [
+    {
+      "name": "createChildLogger",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "d979d536d4cc901ad7ba3e78e5a32774d89c2254a2e72e346e112287de8e33ce"
+    },
+    {
+      "name": "createCorrelationIdMiddleware",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "6a4a5438ac07be7d027fc7cda424a7491b8271efbf72d36284f4a7c67ccfe901"
+    },
+    {
+      "name": "createRequestLoggingMiddleware",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "a642cd6ee5d7ba538a4e1d839eaffba43ee0726787661967b19f3774a11cf114"
+    },
+    {
+      "name": "debug",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "5347611490887161ca78ba2ff14b43c3917e0e7b4aeefdba09c2df08547d5cda"
+    },
+    {
+      "name": "error",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "b8855d787ca8866e928ae17927df29cf0e219fcb3d7a5590850a67e6df7260cc"
+    },
+    {
+      "name": "getLogger",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "8fb80baad1b3cff643c9885666aeb958b404db15ca2180a2796393959b1d3fc0"
+    },
+    {
+      "name": "info",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "00bb73032ccf471bbae29821377904e786a649db9811e7b7e460bec16f31b8ba"
+    },
+    {
+      "name": "initLogger",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "cacdaaffb16c21c86e35f89ec18dd3432a4e0ee05e2c51108925e4e9381dbd53"
+    },
+    {
+      "name": "log",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "7c7b768a64b54409eb3ad8131e5baca1d203009cdb96126ca4e96b3f5fcb57e8"
+    },
+    {
+      "name": "LogEnricher",
+      "kind": "ClassDeclaration",
+      "signatureHash": "4bda9b02fe29204f038af93800dbcb9a17a6067e2f377141a0eb168d10fad7a8"
+    },
+    {
+      "name": "LogEntry",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "cd632ffc70bb8e5d702e5030d2015875010fa22bc923f067df530783c838fcee"
+    },
+    {
+      "name": "LoggerConfig",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "017d71ee192b40b7bbcd31f327cad38dac5daa621c6b61bf2bed2a0a45630552"
+    },
+    {
+      "name": "LogLevel",
+      "kind": "EnumDeclaration",
+      "signatureHash": "2604aa6174e879b6a04f061e91c61e38f05ad2fa36f0b2f649a6fc04875901e8"
+    },
+    {
+      "name": "PerformanceMonitor",
+      "kind": "ClassDeclaration",
+      "signatureHash": "26c0860bb011abef4777756cb75cf07e56475bfa19d256987b43d4ea6d5b8d0f"
+    },
+    {
+      "name": "redactSensitiveData",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "4f2ef51f08fd1b66e7f20484f3d417db7103f8b1b7c9f09c4cd20d8bae21199d"
+    },
+    {
+      "name": "RequestLoggingConfig",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "04e06aaea148ea56432265605a022677c6b2b56c5fd9643780de0000be467d84"
+    },
+    {
+      "name": "RequestWithUser",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "257df83bd6c1b4d05cb7dde7b9ef9d400df3dcdaf03b1a13247bcbcd2f3b5a49"
+    },
+    {
+      "name": "warn",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "b335dad4a3c7e4352d5fcea4b38a2bdc74b36a43a9e9594feb614ec56a0075f9"
+    }
+  ]
+}

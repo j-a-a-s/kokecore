@@ -1,0 +1,117 @@
+{
+  "package": "@kokecore/errors",
+  "version": "0.2.0",
+  "entry": "dist/public.d.ts",
+  "exports": [
+    {
+      "name": "AggregatedError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "d0e872dcd6ab63fe5c81dacc87a2ad33f5e23c91bf4bce29c3e12f3460b6ca82"
+    },
+    {
+      "name": "AuthenticationError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "beccdda73f3684f37f13ea747c6f379ce3676223e6ccabc54c2abdfed097477a"
+    },
+    {
+      "name": "AuthorizationError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "6317918fd1fca9ef61bc4270fe23c811f6732c0608db29f7139e7cb83a02be95"
+    },
+    {
+      "name": "categoryForCode",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "4385aa291803c560e3f46f921bbbcb7574228aa8ccecf5237be03e22af5d5360"
+    },
+    {
+      "name": "CircuitBreakerOpenError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "90e90b5f5ef704442cfabb37aeffdc7ffc6d8668cb6f363039b4607da19cef2c"
+    },
+    {
+      "name": "codeForStatus",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "1a9e1c9d451928964b0a24b98f31aadf888c998be756e7d59b9f673757a0575d"
+    },
+    {
+      "name": "ConflictError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "ad0d6e4af670162c6a5855b32a4768307441f9056040fc4285938b6333d02b44"
+    },
+    {
+      "name": "DefaultErrorHandler",
+      "kind": "ClassDeclaration",
+      "signatureHash": "b2114b828c5d2bf7c6f3caab1994ec62eaa1d0ea54554db09075baf7b25eec16"
+    },
+    {
+      "name": "ERROR_CODES",
+      "kind": "VariableDeclaration",
+      "signatureHash": "2babd7ae863133c9b828838a1ac87165fddddf79ef1a1404406a2752f22dc2ca"
+    },
+    {
+      "name": "ErrorCategory",
+      "kind": "EnumDeclaration",
+      "signatureHash": "62aa3e76e2b86be66ccaca705cbbd34c0c1a3cb3c1b28415b9b0c3a128ab8ba1"
+    },
+    {
+      "name": "ErrorCode",
+      "kind": "TypeAliasDeclaration",
+      "signatureHash": "ea323acd71cbe295dba28950ef5bba0df64d02ab0474b1d8766a8e811fe045d0"
+    },
+    {
+      "name": "ErrorContext",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "09d4e82fb97aac8935738148b092ed77b6c1aa31dda09f7d7a5b323351577908"
+    },
+    {
+      "name": "ErrorFactory",
+      "kind": "ClassDeclaration",
+      "signatureHash": "4d1919d337e771a21de1d2cd1df957552d8d799faeb4d623e0a97f35f1e160b4"
+    },
+    {
+      "name": "ErrorHandler",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "6b47211e872dcaee1e1d02159258ab9b9976299c49fff18a16a0a4d38fb9d1a6"
+    },
+    {
+      "name": "ErrorResponse",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "d399608e48c1ce25b2400df7a0114d2500772d7d4a853832d15d22a5969febf0"
+    },
+    {
+      "name": "InternalServerError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "7c69d762c634b336da91abe9e25e4aa641044e48106a5baa9145d65bc4686a11"
+    },
+    {
+      "name": "KokecoreError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "04ca9d0a6dccf2f92b200f69665980f0ca4498a5f414a8346fa9def55e21e179"
+    },
+    {
+      "name": "NotFoundError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "4927f8354a9dd7b1dff9f33803de6f86419437b3fd5bd51e5579c056532108e0"
+    },
+    {
+      "name": "RateLimitExceededException",
+      "kind": "ClassDeclaration",
+      "signatureHash": "acc5ee17ed1eee0c621da509ca800771097ff1cbdcaf52099ee0f38bb4d40488"
+    },
+    {
+      "name": "RecoverySuggestion",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "64a7274a9a07bb3fcad134eb2bb753e93cbc28241dfa429d71216421c77a1f6b"
+    },
+    {
+      "name": "ServiceUnavailableError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "b4932a5dd113b91ba4d5f909d6b0bd4eb1a2c0f6b09413623e58791b2270bd1d"
+    },
+    {
+      "name": "ValidationError",
+      "kind": "ClassDeclaration",
+      "signatureHash": "e4a205b1e40cb86da97388522be401184b53c21ae0f685ece6371f07c269e333"
+    }
+  ]
+}

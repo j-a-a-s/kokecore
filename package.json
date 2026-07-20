@@ -2,20 +2,29 @@
   "name": "kokecore",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Enterprise-grade reusable libraries for Node.js/TypeScript applications",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
-    "test": "turbo run test",
+    "test": "node --test scripts/*.test.mjs && turbo run test",
     "test:coverage": "turbo run test:coverage",
+    "test:consumer": "node --test tests/consumer-contract/*.test.mjs",
     "test:e2e": "turbo run test:e2e",
     "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,mjs,md,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,mjs,md,json,yml,yaml}\"",
     "typecheck": "turbo run typecheck",
+    "api:verify": "node scripts/verify-public-api.mjs",
+    "api:snapshot": "node scripts/update-public-api-snapshots.mjs",
+    "package:validate": "node scripts/verify-package-contents.mjs",
+    "security:audit": "pnpm audit --audit-level high",
+    "security:licenses": "node scripts/verify-licenses.mjs",
+    "security:scan": "node scripts/scan-secrets.mjs",
+    "security:sbom": "node scripts/generate-sbom.mjs",
     "release": "changeset version",
-    "release:publish": "turbo run build && changeset publish"
+    "release:publish": "node scripts/block-publish.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
@@ -25,12 +34,12 @@
     "@typescript-eslint/parser": "^8.64.0",
     "eslint": "^10.7.0",
     "prettier": "^3.3.3",
-    "turbo": "^2.0.14",
-    "typescript": "^6.0.3"
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
+    "node": ">=18 <25",
+    "pnpm": ">=8 <10"
   },
   "packageManager": "pnpm@8.15.0",
   "pnpm": {

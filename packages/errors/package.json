@@ -1,19 +1,24 @@
 {
   "name": "@kokecore/errors",
   "version": "0.2.0",
+  "private": true,
+  "sideEffects": false,
   "description": "Structured error handling with consistent error codes, context, and recovery suggestions",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/public.js",
+  "types": "./dist/public.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/public.d.ts",
+      "import": "./dist/public.js",
+      "default": "./dist/public.js"
     }
   },
   "files": [
-    "dist",
-    "src"
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc",
@@ -31,8 +36,8 @@
     "typescript",
     "structured-errors"
   ],
-  "author": "Kokecore Contributors",
-  "license": "MIT",
+  "author": "KOKE GROUP",
+  "license": "UNLICENSED",
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^22.15.32",
@@ -40,13 +45,10 @@
     "@typescript-eslint/parser": "^8.64.0",
     "eslint": "^10.7.0",
     "jest": "^30.4.2",
-    "ts-jest": "^29.1.0",
-    "typescript": "^6.0.3"
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "zod": "^4.4.3"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

@@ -242,7 +242,7 @@ export function detectMimeType(filename: string): string {
  */
 export class S3StorageService implements StorageService {
   private config: StorageConfig;
-  private client: any; // AWS S3 Client
+  private client: unknown; // AWS S3 Client
 
   constructor(config: StorageConfig) {
     this.config = config;
@@ -266,7 +266,7 @@ export class S3StorageService implements StorageService {
   }
 
   async createDownloadUrl(input: CreateDownloadUrlInput): Promise<string> {
-    const expiresInSeconds = clampExpiration(input.expiresInSeconds);
+    clampExpiration(input.expiresInSeconds);
     assertSafeStorageKey(input.key);
 
     // In production, this would use getSignedUrl
@@ -302,7 +302,7 @@ export class S3StorageService implements StorageService {
  */
 export class AzureStorageService implements StorageService {
   private config: StorageConfig;
-  private client: any; // Azure Blob Service Client
+  private client: unknown; // Azure Blob Service Client
 
   constructor(config: StorageConfig) {
     this.config = config;
@@ -326,7 +326,7 @@ export class AzureStorageService implements StorageService {
   }
 
   async createDownloadUrl(input: CreateDownloadUrlInput): Promise<string> {
-    const expiresInSeconds = clampExpiration(input.expiresInSeconds);
+    clampExpiration(input.expiresInSeconds);
     assertSafeStorageKey(input.key);
 
     // In production, this would generate SAS token
@@ -362,7 +362,7 @@ export class AzureStorageService implements StorageService {
  */
 export class GCSStorageService implements StorageService {
   private config: StorageConfig;
-  private client: any; // GCS Bucket
+  private client: unknown; // GCS Bucket
 
   constructor(config: StorageConfig) {
     this.config = config;
@@ -386,7 +386,7 @@ export class GCSStorageService implements StorageService {
   }
 
   async createDownloadUrl(input: CreateDownloadUrlInput): Promise<string> {
-    const expiresInSeconds = clampExpiration(input.expiresInSeconds);
+    clampExpiration(input.expiresInSeconds);
     assertSafeStorageKey(input.key);
 
     // In production, this would generate signed URL
@@ -422,7 +422,7 @@ export class GCSStorageService implements StorageService {
  */
 export class MinIOStorageService implements StorageService {
   private config: StorageConfig;
-  private client: any; // MinIO Client
+  private client: unknown; // MinIO Client
 
   constructor(config: StorageConfig) {
     this.config = config;
@@ -448,7 +448,7 @@ export class MinIOStorageService implements StorageService {
   }
 
   async createDownloadUrl(input: CreateDownloadUrlInput): Promise<string> {
-    const expiresInSeconds = clampExpiration(input.expiresInSeconds);
+    clampExpiration(input.expiresInSeconds);
     assertSafeStorageKey(input.key);
 
     // In production, this would use presignedGetObject
@@ -535,7 +535,7 @@ export class EnhancedStorageService {
    */
   async createSecureUploadUrl(
     input: CreateUploadUrlInput,
-    options?: {
+    _options?: {
       requireVirusScan?: boolean;
       optimizeImage?: ImageOptimizationOptions;
     }
@@ -561,7 +561,7 @@ export class EnhancedStorageService {
   /**
    * Scan file for viruses (hook for external service)
    */
-  async scanForVirus(key: string): Promise<VirusScanResult> {
+  async scanForVirus(_key: string): Promise<VirusScanResult> {
     // This would integrate with ClamAV or similar service
     return {
       clean: true,
@@ -572,7 +572,7 @@ export class EnhancedStorageService {
   /**
    * Optimize image (hook for external service)
    */
-  async optimizeImage(key: string, options: ImageOptimizationOptions): Promise<string> {
+  async optimizeImage(key: string, _options: ImageOptimizationOptions): Promise<string> {
     // This would integrate with image optimization service
     return key;
   }

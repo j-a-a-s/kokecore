@@ -1,6 +1,8 @@
 {
   "name": "@kokecore/calendar",
   "version": "0.3.0-beta.0",
+  "private": true,
+  "sideEffects": false,
   "description": "Enterprise calendar synchronization with Google Calendar, Microsoft Graph, and Apple Calendar",
   "main": "./dist/public.js",
   "types": "./dist/public.d.ts",
@@ -12,8 +14,11 @@
     }
   },
   "files": [
-    "dist",
-    "src"
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc",
@@ -33,8 +38,8 @@
     "sync",
     "typescript"
   ],
-  "author": "Kokecore Contributors",
-  "license": "MIT",
+  "author": "KOKE GROUP",
+  "license": "UNLICENSED",
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^22.15.32",
@@ -42,8 +47,8 @@
     "@typescript-eslint/parser": "^8.64.0",
     "eslint": "^10.7.0",
     "jest": "^30.4.2",
-    "ts-jest": "^29.1.0",
-    "typescript": "^6.0.3"
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@azure/msal-node": "^5.4.1",
@@ -53,8 +58,5 @@
     "isomorphic-fetch": "^3.0.0",
     "rrule": "^2.7.2",
     "zod": "^4.4.3"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

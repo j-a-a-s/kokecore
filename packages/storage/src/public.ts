@@ -4,6 +4,7 @@ export {
   clampExpiration,
   detectMimeType,
   sanitizeFilename,
+  StorageProvider,
   validateMimeType,
   type CreateDownloadUrlInput,
   type CreateUploadUrlInput,

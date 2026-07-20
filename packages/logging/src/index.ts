@@ -292,10 +292,21 @@ export interface RequestWithUser {
   originalUrl?: string;
 }
 
+interface ResponseWithEvents {
+  statusCode: number;
+  setHeader(name: string, value: string): void;
+  on(event: 'finish', listener: () => void): void;
+}
+
+interface CorrelationRequest {
+  headers: Record<string, string | undefined>;
+  correlationId?: string;
+}
+
 export function createRequestLoggingMiddleware(config: RequestLoggingConfig) {
   const REQUEST_ID_HEADER = 'x-request-id';
 
-  return (req: RequestWithUser, res: any, next: any) => {
+  return (req: RequestWithUser, res: ResponseWithEvents, next: () => void) => {
     const startedAt = process.hrtime.bigint();
     const requestId = firstHeaderValue(req.headers?.[REQUEST_ID_HEADER]) || randomUUID();
     req.requestId = requestId;
@@ -330,7 +341,11 @@ export function createRequestLoggingMiddleware(config: RequestLoggingConfig) {
  * Correlation ID middleware for distributed tracing
  */
 export function createCorrelationIdMiddleware(headerName = 'x-correlation-id') {
-  return (req: any, res: any, next: any) => {
+  return (
+    req: CorrelationRequest,
+    res: Pick<ResponseWithEvents, 'setHeader'>,
+    next: () => void
+  ) => {
     const correlationId = req.headers[headerName] || randomUUID();
     req.correlationId = correlationId;
     res.setHeader(headerName, correlationId);

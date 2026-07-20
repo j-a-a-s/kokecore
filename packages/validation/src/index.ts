@@ -14,7 +14,7 @@
 import { URL } from 'node:url';
 import { z } from 'zod';
 import { parsePhoneNumber, isValidPhoneNumber, CountryCode } from 'libphonenumber-js';
-import { isValid as isValidIBAN, electronicFormat as formatIBAN } from 'iban';
+import { isValid as validateIBAN, electronicFormat as toElectronicIBAN } from 'iban';
 
 /**
  * Chilean RUT validation
@@ -209,7 +209,13 @@ export function createPhoneSchema(countryCode?: CountryCode) {
 /**
  * IBAN validation
  */
-export { isValidIBAN, formatIBAN };
+export function isValidIBAN(value: string): boolean {
+  return validateIBAN(value);
+}
+
+export function formatIBAN(value: string): string {
+  return toElectronicIBAN(value);
+}
 
 /**
  * Zod schema for IBAN validation

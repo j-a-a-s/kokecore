@@ -3,10 +3,14 @@
   "commit": false,
   "fixed": [],
   "linked": [["@kokecore/*"]],
-  "access": "public",
+  "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [],
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  },
   "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
     "onlyUpdatePeerDependentsWhenOutOfRange": true
   }

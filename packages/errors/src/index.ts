@@ -482,13 +482,13 @@ export function categoryForCode(code: ErrorCode): ErrorCategory {
   if (code === ERROR_CODES.AUTH_FORBIDDEN || code === ERROR_CODES.AUTH_INSUFFICIENT_PERMISSIONS) {
     return ErrorCategory.AUTHORIZATION;
   }
+  if (code.startsWith('EXTERNAL') || code.includes('DELIVERY'))
+    return ErrorCategory.EXTERNAL_SERVICE;
   if (code.startsWith('AUTH')) return ErrorCategory.AUTHENTICATION;
   if (code.startsWith('RESOURCE') || code.endsWith('_NOT_FOUND')) return ErrorCategory.NOT_FOUND;
   if (code.startsWith('DUPLICATE') || code.includes('CONFLICT')) return ErrorCategory.CONFLICT;
   if (code.startsWith('RATE_LIMIT')) return ErrorCategory.RATE_LIMIT;
   if (code.startsWith('DATABASE')) return ErrorCategory.DATABASE;
-  if (code.startsWith('EXTERNAL') || code.includes('DELIVERY'))
-    return ErrorCategory.EXTERNAL_SERVICE;
   if (code.startsWith('NETWORK')) return ErrorCategory.NETWORK;
   if (code.startsWith('BUSINESS')) return ErrorCategory.BUSINESS;
   if (code.startsWith('WORKFLOW')) return ErrorCategory.WORKFLOW;

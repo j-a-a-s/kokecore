@@ -1,0 +1,62 @@
+{
+  "package": "@kokecore/storage",
+  "version": "0.3.0-beta.0",
+  "entry": "dist/public.d.ts",
+  "exports": [
+    {
+      "name": "assertSafeStorageKey",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "e2de4c7497a348a1e6e98cbfe2ef43bf918bd438c9c6bc987e2d2dd60524a576"
+    },
+    {
+      "name": "buildStorageKey",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "00395b07dda2026d553b1818049b4616dab06a062f449a6218760b5a5a459b3c"
+    },
+    {
+      "name": "clampExpiration",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "57b92f37409efbee94d05320cb0a80e627c7a9cc65d43a5ad36bcfbc4ab23398"
+    },
+    {
+      "name": "CreateDownloadUrlInput",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "dbcb6925fdf5c9f4675a24b114904a70fb3d6e01ee7d9ee90ba508a0a4ee21b8"
+    },
+    {
+      "name": "CreateUploadUrlInput",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "8c6009462a9bde84b948eba447d64734e6085ab4a02bb7d361e4618e0168a942"
+    },
+    {
+      "name": "CreateUploadUrlResult",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "d2c38fd63dcbeb67f5ed5e6858d28ecf15c02b919937a9934911f640714c4afa"
+    },
+    {
+      "name": "detectMimeType",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "917251d19b2c4484c9d57a67c21d39c8d9a31ae6c6835034087cab7f0aaef794"
+    },
+    {
+      "name": "sanitizeFilename",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "9bae55755989463493c4799b9262da4ce35ba560cc28df2018bae2a31add6ba2"
+    },
+    {
+      "name": "StorageConfig",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "b1e9c2f084232b5ff544f18928ca6d19773b5bb6bc13c87e3444ad0a3e5c47cf"
+    },
+    {
+      "name": "StorageProvider",
+      "kind": "EnumDeclaration",
+      "signatureHash": "0ac1d829ac21c0d6d8a14746447b07219937de11414c481ac20d5a95b8c4f49e"
+    },
+    {
+      "name": "validateMimeType",
+      "kind": "FunctionDeclaration",
+      "signatureHash": "450ca355f0f2a6ed1e778bc75f0b363cd366bc14f7254bdc58a612ff219ecee1"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "package": "@kokecore/auth",
+  "version": "0.3.0-beta.0",
+  "entry": "dist/public.d.ts",
+  "exports": [
+    {
+      "name": "AuthConfig",
+      "kind": "InterfaceDeclaration",
+      "signatureHash": "50262f6cf926712d8ec54ba725e089ef4fc072b274382b6b2671d31dffadb2d2"
+    },
+    {
+      "name": "PasswordService",
+      "kind": "ClassDeclaration",
+      "signatureHash": "ba6db7998208aef02b7604ff123ea0a56ecb045e01ee5d3043bdfdec7e033ad5"
+    }
+  ]
+}

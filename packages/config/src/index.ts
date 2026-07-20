@@ -146,10 +146,10 @@ function requireString(
 ): string {
   const value = env[key];
   if (value !== undefined && value !== '') return value;
-  if (defaultValue !== undefined) return defaultValue;
   if (isProduction) {
     throw new Error(`${key} is required in production`);
   }
+  if (defaultValue !== undefined) return defaultValue;
   throw new Error(`${key} is required`);
 }
 
