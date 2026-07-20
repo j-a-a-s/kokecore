@@ -6,5 +6,6 @@ import { runPackagedConsumerContract } from '../../scripts/lib/consumer-contract
 test('installs and runs the reference consumer from packed artifacts', () => {
   const result = runPackagedConsumerContract();
   assert.equal(result.packageCount, 8);
+  assert.equal(result.rejectedDeepImports, 24);
   assert.match(result.output, /REFERENCE_CONSUMER_OK/);
 });
