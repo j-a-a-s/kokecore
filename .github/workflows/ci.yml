@@ -1,4 +1,4 @@
-name: CI
+name: KOKE CORE Quality Gate
 
 on:
   push:
@@ -11,9 +11,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  quality:
+    name: Quality, security, and package gates
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -24,38 +27,81 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
-
       - name: Format check
         run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
 
       - name: Type check
         run: pnpm typecheck
 
-  test:
-    name: Test
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Enforce package coverage thresholds
+        run: pnpm test:coverage
+
+      - name: Verify public API snapshots
+        run: pnpm api:verify
+
+      - name: Scan repository for secrets
+        run: pnpm security:scan
+
+      - name: Review dependency licenses
+        run: pnpm security:licenses
+
+      - name: Audit dependencies
+        run: pnpm security:audit
+
+      - name: Validate packed package contents
+        run: pnpm package:validate
+
+      - name: Generate CycloneDX SBOM
+        run: pnpm security:sbom
+
+      - name: Upload coverage and SBOM evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-and-supply-chain-evidence
+          path: |
+            packages/*/coverage/
+            artifacts/kokecore.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
+  packaged-consumer:
+    name: Packaged consumer (pnpm ${{ matrix.pnpm-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [18, 20]
+        pnpm-version: ['8.15.0', '9.15.4']
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
+        with:
+          version: ${{ matrix.pnpm-version }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -64,55 +110,5 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Run tests
-        run: pnpm test
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
-        if: matrix.node-version == 20
-        with:
-          fail_ci_if_error: false
-
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Audit dependencies
-        run: pnpm audit --audit-level moderate
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build all packages
-        run: pnpm build
+      - name: Test packed consumer contract
+        run: pnpm test:consumer
