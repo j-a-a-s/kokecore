@@ -48,7 +48,7 @@
   "dependencies": {
     "iban": "^0.0.14",
     "libphonenumber-js": "^1.10.44",
-    "zod": "^3.22.4"
+    "zod": "^4.4.3"
   },
   "publishConfig": {
     "access": "public"
