@@ -82,7 +82,7 @@ environment access, deep imports, and runtime dependencies are excluded.
 - [x] SBOM
   - CycloneDX 1.6 generated successfully with 690 components.
 - [x] Tarball validado
-  - Exact 9-file allowlist, root export, declarations, proprietary LICENSE/NOTICE,
+  - Exact 7-file allowlist, root export, declarations, proprietary NOTICE,
     README, no source maps, no runtime dependencies, no product strings, and checksum verified.
 - [x] README actualizado
   - Root and package READMEs document runtime, public API, usage, and internal distribution.
@@ -93,8 +93,9 @@ environment access, deep imports, and runtime dependencies are excluded.
 - [x] Rollback probado
   - Temporary rehearsal ended with `KAKLEN_CONFIG_ROLLBACK_PASSED`; full-checkout
     rollback was rejected after exposing a browser regression, then corrected to restore only Config.
-- [x] Link local eliminado
-  - Kaklen uses the versioned internal tarball for Config; all other seven links remain local.
+- [x] Link local eliminado en certificación
+  - A temporary clean Kaklen checkout uses only the generated Config artifact;
+    permanent dependency replacement is a separate decision.
 - [x] Evidencia ligada a commits exactos
   - Artifact, API, integration, rollback, and security SHAs are listed under Certified identity.
 
@@ -115,7 +116,7 @@ Kaklen rollback instructions and the executable rehearsal are in
 
 ## Decision
 
-All individual controls pass and no Config P0 or P1 remains open.
-`@kokecore/config@0.2.0` is therefore `stable` for the exact internal Alpha
-artifact above. This decision does not authorize public publication, a registry
-migration, or migration of another package.
+The existing controls support continued beta certification. They do not mark
+`@kokecore/config@0.2.0` as stable and do not authorize permanent dependency
+replacement, public publication, a registry migration, or migration of another
+package.

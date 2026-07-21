@@ -3,8 +3,8 @@
 Internal reusable libraries for KOKE GROUP Node.js/TypeScript applications.
 
 > **Alpha:** every package is private and `UNLICENSED`. Public npm publishing
-> is blocked. `@kokecore/config` is stable only for certified internal
-> consumption; no package is approved for public distribution.
+> is blocked. `@kokecore/config` remains beta while its private immutable
+> distribution path is certified; no package is approved for public distribution.
 
 ## Runtime requirements
 

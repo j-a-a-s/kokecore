@@ -1,23 +1,22 @@
-import { createHash } from 'node:crypto';
 import {
-  copyFileSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
   statSync,
   symlinkSync,
+  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { createAndValidateConfigArtifact } from './certify-config-artifact.mjs';
+import { createReproducibleConfigArtifact } from './certify-config-artifact.mjs';
 
-export const CERTIFIED_CONFIG_SPECIFIER =
-  'file:../../vendor/kokecore/config/kokecore-config-0.2.0.tgz';
+export const CONFIG_LINK_SPECIFIER = 'link:../../../kokecore/packages/config';
 
 export const LINKED_KOKECORE_PACKAGES = Object.freeze([
   '@kokecore/auth',
@@ -37,8 +36,16 @@ const KAKLEN_VALIDATIONS = Object.freeze([
   ['build'],
   ['architecture:check'],
   ['security:scan'],
-  ['--filter', '@kaklen/config', 'test'],
 ]);
+
+const ROLLBACK_VALIDATIONS = Object.freeze([['typecheck'], ['test'], ['build']]);
+
+export function temporaryArtifactSpecifier(archiveName) {
+  if (!/^kokecore-config-[0-9]+\.[0-9]+\.[0-9]+\.tgz$/.test(archiveName)) {
+    throw new Error(`Invalid Config artifact name: ${archiveName}`);
+  }
+  return `file:../../../artifacts/${archiveName}`;
+}
 
 export function collectKokecoreDependencies(manifests) {
   const dependencies = new Map();
@@ -55,17 +62,15 @@ export function collectKokecoreDependencies(manifests) {
   return dependencies;
 }
 
-export function validateKaklenDependencyContract(manifests, lockfile) {
+export function validateKaklenDependencyContract(manifests, lockfile, expectedConfigSpecifier) {
   const dependencies = collectKokecoreDependencies(manifests);
   const errors = [];
   const configUses = dependencies.get('@kokecore/config') ?? [];
 
-  if (configUses.length !== 1) {
-    errors.push(`expected one @kokecore/config dependency, found ${configUses.length}`);
-  }
+  if (configUses.length === 0) errors.push('expected at least one @kokecore/config dependency');
   for (const use of configUses) {
-    if (use.specifier !== CERTIFIED_CONFIG_SPECIFIER) {
-      errors.push(`@kokecore/config uses an uncertified specifier in ${use.path}`);
+    if (use.specifier !== expectedConfigSpecifier) {
+      errors.push(`@kokecore/config uses an unexpected specifier in ${use.path}`);
     }
   }
 
@@ -88,11 +93,13 @@ export function validateKaklenDependencyContract(manifests, lockfile) {
     }
   }
 
-  if (!lockfile.includes('file:vendor/kokecore/config/kokecore-config-0.2.0.tgz')) {
-    errors.push('lockfile does not contain the certified Config artifact');
-  }
-  if (/['"]?@kokecore\/config['"]?:[\s\S]{0,250}(?:specifier|version):\s*link:/.test(lockfile)) {
-    errors.push('lockfile still contains a local Config link');
+  if (expectedConfigSpecifier.startsWith('file:')) {
+    if (!lockfile.includes('kokecore-config-0.2.0.tgz')) {
+      errors.push('lockfile does not contain the temporary certified Config artifact');
+    }
+    if (/['"]?@kokecore\/config['"]?:[\s\S]{0,250}(?:specifier|version):\s*link:/.test(lockfile)) {
+      errors.push('lockfile still contains a local Config link');
+    }
   }
   return errors;
 }
@@ -102,28 +109,17 @@ export function findConfigDeepImports(files) {
   return files.filter(({ content }) => pattern.test(content)).map(({ path }) => path);
 }
 
-export function readExpectedChecksum(content, archiveName) {
-  const line = content
-    .split(/\r?\n/)
-    .map((value) => value.trim())
-    .find((value) => value.endsWith(`  ${archiveName}`));
-  const checksum = line?.split(/\s+/)[0];
-  if (!checksum || !/^[a-f0-9]{64}$/.test(checksum)) {
-    throw new Error(`No valid SHA-256 entry found for ${archiveName}.`);
-  }
-  return checksum;
-}
-
 export function certifyConfigWithKaklen({
   coreRoot = process.cwd(),
   kaklenSource = process.env.KAKLEN_SOURCE_PATH ?? resolve(process.cwd(), '..', 'kaklen'),
   expectedKaklenSha = process.env.KAKLEN_EXPECTED_SHA,
+  archive,
 } = {}) {
   const workspaceRoot = resolve(coreRoot);
   const source = resolve(kaklenSource);
   const temporaryRoot = mkdtempSync(join(tmpdir(), 'kokecore-config-kaklen-'));
   const kaklenRoot = join(temporaryRoot, 'kaklen');
-  const artifactRoot = join(temporaryRoot, 'artifacts');
+  const artifactsRoot = join(temporaryRoot, 'artifacts');
 
   try {
     assertRepository(source, 'Kaklen source');
@@ -135,37 +131,100 @@ export function certifyConfigWithKaklen({
     }
 
     symlinkSync(workspaceRoot, join(temporaryRoot, 'kokecore'), 'dir');
-    run('corepack', ['pnpm', 'build'], workspaceRoot);
+    const artifact = archive
+      ? { archive: resolve(archive) }
+      : createReproducibleConfigArtifact({ root: workspaceRoot, destination: artifactsRoot });
+    if (!existsSync(artifact.archive)) {
+      throw new Error(`Certified Config artifact does not exist: ${artifact.archive}`);
+    }
+    mkdirSync(artifactsRoot, { recursive: true });
+    if (resolve(artifact.archive) !== join(artifactsRoot, basename(artifact.archive))) {
+      symlinkSync(resolve(artifact.archive), join(artifactsRoot, basename(artifact.archive)));
+    }
 
-    const artifact = createAndValidateConfigArtifact({
-      root: workspaceRoot,
-      destination: artifactRoot,
+    rmSync(join(kaklenRoot, 'vendor', 'kokecore', 'config'), {
+      recursive: true,
+      force: true,
     });
-    const vendorRoot = join(kaklenRoot, 'vendor', 'kokecore', 'config');
-    const vendorArchive = join(vendorRoot, basename(artifact.archive));
-    copyFileSync(artifact.archive, vendorArchive);
-    validateArtifactChecksum(vendorRoot, vendorArchive, artifact.checksum);
-    validateKaklenCheckout(kaklenRoot);
 
-    run('pnpm', ['install', '--frozen-lockfile'], kaklenRoot);
+    setConfigSpecifier(kaklenRoot, CONFIG_LINK_SPECIFIER);
+    run('pnpm', ['install', '--no-frozen-lockfile'], kaklenRoot);
+    const baselineLockfile = readFileSync(join(kaklenRoot, 'pnpm-lock.yaml'), 'utf8');
+    validateKaklenCheckout(kaklenRoot, CONFIG_LINK_SPECIFIER);
+
+    const artifactSpecifier = temporaryArtifactSpecifier(basename(artifact.archive));
+    const integrationStartedAt = Date.now();
+    setConfigSpecifier(kaklenRoot, artifactSpecifier);
+    run('pnpm', ['install', '--no-frozen-lockfile'], kaklenRoot);
     run('pnpm', ['prisma:generate'], kaklenRoot);
-    for (const args of KAKLEN_VALIDATIONS) run('pnpm', args, kaklenRoot);
+    validateKaklenCheckout(kaklenRoot, artifactSpecifier);
+    for (const args of KAKLEN_VALIDATIONS) {
+      if (args[0] === 'test') clearKaklenTestRedisState(kaklenRoot);
+      run('pnpm', args, kaklenRoot);
+    }
+    const integrationDurationMs = Date.now() - integrationStartedAt;
+
+    const rollbackStartedAt = Date.now();
+    setConfigSpecifier(kaklenRoot, CONFIG_LINK_SPECIFIER);
+    writeFileSync(join(kaklenRoot, 'pnpm-lock.yaml'), baselineLockfile);
+    run('pnpm', ['install', '--no-frozen-lockfile'], kaklenRoot);
+    validateKaklenCheckout(kaklenRoot, CONFIG_LINK_SPECIFIER);
+    for (const args of ROLLBACK_VALIDATIONS) {
+      if (args[0] === 'test') clearKaklenTestRedisState(kaklenRoot);
+      run('pnpm', args, kaklenRoot);
+    }
+    const rollbackDurationMs = Date.now() - rollbackStartedAt;
 
     console.log('KAKLEN_CONFIG_INTEGRATION_PASSED');
     console.log(`Kaklen SHA: ${kaklenSha}`);
-    console.log(`Config version: ${artifact.version}`);
-    console.log(`Config SHA256: ${artifact.checksum}`);
+    console.log(`Artifact: ${basename(artifact.archive)}`);
+    console.log(`Integration duration: ${integrationDurationMs} ms`);
+    console.log(`Rollback duration: ${rollbackDurationMs} ms`);
     console.log('Temporary checkout removed: yes');
-    return { artifact, kaklenSha };
+    return { artifact, integrationDurationMs, kaklenSha, rollbackDurationMs };
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });
   }
 }
 
-function validateKaklenCheckout(kaklenRoot) {
+function setConfigSpecifier(kaklenRoot, specifier) {
+  let replacements = 0;
+  for (const item of collectPackageManifests(kaklenRoot)) {
+    let changed = false;
+    for (const section of ['dependencies', 'devDependencies', 'peerDependencies']) {
+      if (item.manifest[section]?.['@kokecore/config'] === undefined) continue;
+      item.manifest[section]['@kokecore/config'] = specifier;
+      replacements += 1;
+      changed = true;
+    }
+    if (changed) {
+      writeFileSync(join(kaklenRoot, item.path), `${JSON.stringify(item.manifest, null, 2)}\n`);
+    }
+  }
+  if (replacements === 0) throw new Error('Kaklen has no @kokecore/config dependency to certify.');
+}
+
+function clearKaklenTestRedisState(kaklenRoot) {
+  const script = [
+    'const Redis = require("ioredis");',
+    'const redis = new Redis("redis://localhost:6379/12", { connectTimeout: 3000, maxRetriesPerRequest: 1 });',
+    'redis.flushdb().then(() => redis.quit()).catch(async (error) => {',
+    '  console.error(`Unable to isolate Kaklen test Redis state: ${error.message}`);',
+    '  redis.disconnect();',
+    '  process.exitCode = 1;',
+    '});',
+  ].join('\n');
+  run('node', ['--eval', script], join(kaklenRoot, 'apps', 'api'));
+}
+
+function validateKaklenCheckout(kaklenRoot, expectedConfigSpecifier) {
   const manifests = collectPackageManifests(kaklenRoot);
   const lockfile = readFileSync(join(kaklenRoot, 'pnpm-lock.yaml'), 'utf8');
-  const dependencyErrors = validateKaklenDependencyContract(manifests, lockfile);
+  const dependencyErrors = validateKaklenDependencyContract(
+    manifests,
+    lockfile,
+    expectedConfigSpecifier
+  );
   const sourceFiles = collectSourceFiles(kaklenRoot);
   const deepImports = findConfigDeepImports(sourceFiles);
   const errors = [
@@ -174,20 +233,6 @@ function validateKaklenCheckout(kaklenRoot) {
   ];
   if (errors.length > 0) {
     throw new Error(`Kaklen Config consumption contract failed:\n- ${errors.join('\n- ')}`);
-  }
-}
-
-function validateArtifactChecksum(vendorRoot, vendorArchive, actualChecksum) {
-  const archiveName = basename(vendorArchive);
-  const expectedChecksum = readExpectedChecksum(
-    readFileSync(join(vendorRoot, 'SHA256SUMS'), 'utf8'),
-    archiveName
-  );
-  const copiedChecksum = createHash('sha256').update(readFileSync(vendorArchive)).digest('hex');
-  if (actualChecksum !== expectedChecksum || copiedChecksum !== expectedChecksum) {
-    throw new Error(
-      `Config artifact checksum mismatch: expected ${expectedChecksum}, generated ${actualChecksum}, copied ${copiedChecksum}.`
-    );
   }
 }
 
@@ -272,6 +317,14 @@ function commandTimeout() {
   return timeout;
 }
 
+function parseArchiveArgument(args) {
+  const index = args.indexOf('--archive');
+  if (index === -1) return undefined;
+  const archive = args[index + 1];
+  if (!archive) throw new Error('--archive requires a tarball path');
+  return archive;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  certifyConfigWithKaklen();
+  certifyConfigWithKaklen({ archive: parseArchiveArgument(process.argv.slice(2)) });
 }

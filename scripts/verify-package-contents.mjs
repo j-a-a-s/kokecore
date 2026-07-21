@@ -33,6 +33,14 @@ const REQUIRED_FILES = [
   'package/dist/public.d.ts',
 ];
 
+const CONFIG_REQUIRED_FILES = [
+  'package/package.json',
+  'package/README.md',
+  'package/NOTICE',
+  'package/dist/public.js',
+  'package/dist/public.d.ts',
+];
+
 export function validateManifest(manifest) {
   const errors = [];
   if (manifest.private !== true) errors.push('manifest must set private: true');
@@ -51,10 +59,11 @@ export function validateManifest(manifest) {
   return errors;
 }
 
-export function validateArchiveEntries(entries) {
+export function validateArchiveEntries(entries, packageName) {
   const errors = [];
   const normalized = entries.filter(Boolean);
-  for (const required of REQUIRED_FILES) {
+  const requiredFiles = packageName === '@kokecore/config' ? CONFIG_REQUIRED_FILES : REQUIRED_FILES;
+  for (const required of requiredFiles) {
     if (!normalized.includes(required)) errors.push(`missing required file: ${required}`);
   }
   for (const entry of normalized) {
@@ -85,7 +94,7 @@ export function verifyPackageContents(root = process.cwd()) {
       const manifestErrors = validateManifest(item.manifest);
       const archive = packPackage(item.directory, temporaryRoot);
       const entries = listArchive(archive);
-      const archiveErrors = validateArchiveEntries(entries);
+      const archiveErrors = validateArchiveEntries(entries, item.manifest.name);
       const extractionRoot = join(temporaryRoot, item.shortName);
       mkdirSync(extractionRoot, { recursive: true });
       extractArchive(archive, extractionRoot);

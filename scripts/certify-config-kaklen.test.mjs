@@ -2,13 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  CERTIFIED_CONFIG_SPECIFIER,
+  CONFIG_LINK_SPECIFIER,
   findConfigDeepImports,
-  readExpectedChecksum,
+  temporaryArtifactSpecifier,
   validateKaklenDependencyContract,
 } from './certify-config-kaklen.mjs';
 
-function manifests(configSpecifier = CERTIFIED_CONFIG_SPECIFIER, linkedSpecifier = 'link:../core') {
+const artifactSpecifier = temporaryArtifactSpecifier('kokecore-config-0.2.0.tgz');
+
+function manifests(configSpecifier = artifactSpecifier, linkedSpecifier = 'link:../core') {
   return [
     {
       path: 'packages/config/package.json',
@@ -28,26 +30,48 @@ function manifests(configSpecifier = CERTIFIED_CONFIG_SPECIFIER, linkedSpecifier
   ];
 }
 
-const validLockfile = `
+const validArtifactLockfile = `
 packages/config:
   dependencies:
     '@kokecore/config':
-      specifier: ${CERTIFIED_CONFIG_SPECIFIER}
-      version: file:vendor/kokecore/config/kokecore-config-0.2.0.tgz
+      specifier: ${artifactSpecifier}
+      version: file:../artifacts/kokecore-config-0.2.0.tgz
 `;
 
-test('accepts only the certified Config artifact while seven packages stay linked', () => {
-  assert.deepEqual(validateKaklenDependencyContract(manifests(), validLockfile), []);
+test('accepts a temporary Config artifact while seven packages stay linked', () => {
+  assert.deepEqual(
+    validateKaklenDependencyContract(manifests(), validArtifactLockfile, artifactSpecifier),
+    []
+  );
 });
 
-test('rejects a Config link and migration of another package', () => {
+test('rejects a Config link during artifact validation and migration of another package', () => {
   const errors = validateKaklenDependencyContract(
-    manifests('link:../../../kokecore/packages/config', 'file:auth.tgz'),
-    validLockfile.replace(CERTIFIED_CONFIG_SPECIFIER, 'link:../../../kokecore/packages/config')
+    manifests(CONFIG_LINK_SPECIFIER, 'file:auth.tgz'),
+    validArtifactLockfile.replace(artifactSpecifier, CONFIG_LINK_SPECIFIER),
+    artifactSpecifier
   );
-  assert.ok(errors.some((error) => error.includes('uncertified specifier')));
+  assert.ok(errors.some((error) => error.includes('unexpected specifier')));
   assert.ok(errors.some((error) => error.includes('must remain a local link')));
   assert.ok(errors.some((error) => error.includes('lockfile still contains a local Config link')));
+});
+
+test('accepts the restored Config link during rollback', () => {
+  const linkLockfile = `
+packages/config:
+  dependencies:
+    '@kokecore/config':
+      specifier: ${CONFIG_LINK_SPECIFIER}
+      version: link:../../../kokecore/packages/config
+`;
+  assert.deepEqual(
+    validateKaklenDependencyContract(
+      manifests(CONFIG_LINK_SPECIFIER),
+      linkLockfile,
+      CONFIG_LINK_SPECIFIER
+    ),
+    []
+  );
 });
 
 test('detects Config deep imports but accepts the package root', () => {
@@ -61,11 +85,10 @@ test('detects Config deep imports but accepts the package root', () => {
   );
 });
 
-test('reads only a complete SHA-256 entry for the expected archive', () => {
-  const checksum = 'a'.repeat(64);
+test('only accepts the certified Config tarball name for temporary installation', () => {
   assert.equal(
-    readExpectedChecksum(`${checksum}  kokecore-config-0.2.0.tgz\n`, 'kokecore-config-0.2.0.tgz'),
-    checksum
+    temporaryArtifactSpecifier('kokecore-config-0.2.0.tgz'),
+    'file:../../../artifacts/kokecore-config-0.2.0.tgz'
   );
-  assert.throws(() => readExpectedChecksum('invalid  other.tgz\n', 'kokecore-config-0.2.0.tgz'));
+  assert.throws(() => temporaryArtifactSpecifier('../config.tgz'));
 });

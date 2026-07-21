@@ -1,0 +1,70 @@
+name: Config Package Artifact
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/config/**'
+      - 'scripts/certify-config-artifact.mjs'
+      - 'scripts/lib/package-tarballs.mjs'
+      - '.github/workflows/config-package.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build immutable Config artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint Config
+        run: pnpm --filter @kokecore/config lint
+
+      - name: Typecheck Config
+        run: pnpm --filter @kokecore/config typecheck
+
+      - name: Test Config
+        run: pnpm --filter @kokecore/config test
+
+      - name: Enforce Config coverage
+        run: pnpm --filter @kokecore/config test:coverage
+
+      - name: Build Config
+        run: pnpm --filter @kokecore/config build
+
+      - name: Validate workspace packages
+        run: pnpm package:validate
+
+      - name: Create reproducible Config tarball
+        run: pnpm config:artifact -- --output artifacts/config
+
+      - name: Record checksum and archive content
+        run: |
+          sha256sum artifacts/config/kokecore-config-0.2.0.tgz > artifacts/config/SHA256SUMS
+          tar -tzf artifacts/config/kokecore-config-0.2.0.tgz > artifacts/config/CONTENTS.txt
+
+      - name: Upload private immutable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kokecore-config-0.2.0-${{ github.sha }}
+          path: artifacts/config/
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: false

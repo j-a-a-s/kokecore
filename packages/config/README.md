@@ -65,6 +65,8 @@ logging the rejected value.
 
 ## Distribution
 
-Install only from the immutable, checksum-verified internal Alpha artifact.
-Public registry publication and deep imports are prohibited. Import exclusively
-from `@kokecore/config`.
+This package remains beta. Certification creates a checksum-verified tarball in
+temporary storage and uploads it as a private GitHub Actions artifact bound to a
+commit SHA. Permanent consumption is not approved yet. Public registry
+publication and deep imports are prohibited. Import exclusively from
+`@kokecore/config`.
