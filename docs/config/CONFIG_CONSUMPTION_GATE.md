@@ -1,6 +1,11 @@
-# @kokecore/config consumption gate
+# @kokecore/config historical consumption gate
 
-## Certified identity
+> This document records the earlier consumption gate. The authoritative
+> package identity, checksum, Node and pnpm matrix, Kaklen integration, and
+> rollback evidence are in
+> [`CONFIG_PACKAGE_CERTIFICATION.md`](./CONFIG_PACKAGE_CERTIFICATION.md).
+
+## Historical certified identity
 
 - Package: `@kokecore/config@0.2.0`
 - Artifact source: `cf1acdb6f6bfc3487a5af3b0d1b6f5b1da044c34`
