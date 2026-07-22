@@ -222,6 +222,40 @@ describe('Middleware', () => {
     finish();
   });
 
+  it('does not log query string values', () => {
+    const logger = getLogger();
+    const info = jest.fn();
+    const child = jest
+      .spyOn(logger, 'child')
+      .mockReturnValue({ info } as unknown as ReturnType<typeof logger.child>);
+    const middleware = createRequestLoggingMiddleware({
+      service: 'test',
+      environment: 'test',
+    });
+    const req: RequestWithUser = {
+      headers: { 'x-request-id': 'req-query' },
+      method: 'GET',
+      originalUrl: '/api/users?accessToken=test-only-secret',
+    };
+    let finish = () => undefined;
+    const res = {
+      setHeader: jest.fn(),
+      statusCode: 200,
+      on: jest.fn((_event: 'finish', listener: () => void) => {
+        finish = listener;
+      }),
+    };
+
+    middleware(req, res, jest.fn());
+    finish();
+
+    expect(info).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/api/users', message: 'GET /api/users 200' })
+    );
+    expect(info.mock.calls.flat().join(' ')).not.toContain('test-only-secret');
+    child.mockRestore();
+  });
+
   it.each([400, 500])('logs response status %i and generates missing request IDs', (statusCode) => {
     const middleware = createRequestLoggingMiddleware({ service: 'test', environment: 'test' });
     const req: {

@@ -145,36 +145,77 @@ describe('SessionService', () => {
 describe('JwtService', () => {
   const service = new JwtService(createConfig());
 
-  it('returns placeholders for tokens', async () => {
+  it('signs and verifies typed access and refresh tokens', async () => {
     const token = await service.generateAccessToken({
       sub: 'u1',
       email: 'u1@example.com',
       sessionVersion: 1,
     });
-    expect(token).toBe('access_token_placeholder');
+    await expect(service.verifyAccessToken(token)).resolves.toMatchObject({
+      sub: 'u1',
+      email: 'u1@example.com',
+      sessionVersion: 1,
+    });
+
     const pair = await service.generateTokenPair('u1', 'u1@example.com', 1, 'session-1');
-    expect(pair.accessToken).toBe('access_token_placeholder');
-    expect(pair.refreshToken).toBe('refresh_token_placeholder');
+    await expect(service.verifyRefreshToken(pair.refreshToken)).resolves.toMatchObject({
+      sub: 'u1',
+      sessionId: 'session-1',
+      sessionVersion: 1,
+    });
     expect(pair.expiresIn).toBe(900);
   });
 
-  it('covers refresh and verification adapters', async () => {
+  it('rejects tampered, expired, malformed, and wrong-purpose tokens', async () => {
+    const token = await service.generateAccessToken({
+      sub: 'u1',
+      email: 'u1@example.com',
+      sessionVersion: 1,
+    });
+    const [header, body] = token.split('.');
+    await expect(service.verifyAccessToken(`${header}.${body}.tampered`)).rejects.toThrow(
+      'Invalid JWT signature'
+    );
+    await expect(service.verifyAccessToken('not-a-token')).rejects.toThrow('Invalid JWT');
+
+    const refresh = await service.generateRefreshToken({
+      sub: 'u1',
+      sessionId: 'session-1',
+      sessionVersion: 1,
+    });
+    await expect(service.verifyAccessToken(refresh)).rejects.toThrow('Invalid JWT signature');
+
+    const expired = new JwtService({ ...createConfig(), jwtAccessExpiresSeconds: -1 });
+    const expiredToken = await expired.generateAccessToken({
+      sub: 'u1',
+      email: 'u1@example.com',
+      sessionVersion: 1,
+    });
+    await expect(expired.verifyAccessToken(expiredToken)).rejects.toThrow('Invalid or expired JWT');
+  });
+
+  it('requires separate access and refresh secrets', () => {
     expect(
-      await service.generateRefreshToken({ sub: 'u1', sessionId: 's1', sessionVersion: 1 })
-    ).toBe('refresh_token_placeholder');
-    expect(await service.verifyAccessToken('token')).toEqual({});
-    expect(await service.verifyRefreshToken('token')).toEqual({});
+      () => new JwtService({ ...createConfig(), jwtRefreshSecret: createConfig().jwtAccessSecret })
+    ).toThrow('JWT access and refresh secrets must be different');
   });
 });
 
 describe('MFAService', () => {
   const service = new MFAService(createConfig());
 
+  it('generates a cryptographically random base32 secret', async () => {
+    const first = await service.generateSecret();
+    const second = await service.generateSecret();
+    expect(first).toMatch(/^[A-Z2-7]{32}$/);
+    expect(second).not.toBe(first);
+  });
+
   it('generates backup codes', async () => {
     const codes = await service.generateBackupCodes(5);
     expect(codes).toHaveLength(5);
     expect(new Set(codes).size).toBe(5);
-    for (const code of codes) expect(code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
+    for (const code of codes) expect(code).toMatch(/^[A-HJ-NP-Z2-9]{10}$/);
   });
 
   it('verifies and removes backup codes', async () => {
@@ -184,10 +225,17 @@ describe('MFAService', () => {
     expect(await service.verifyBackupCode(codes, 'missing')).toBe(false);
   });
 
-  it('exposes placeholder MFA adapters and default backup count', async () => {
-    expect(await service.generateSecret()).toBe('mfa_secret_placeholder');
+  it('verifies TOTP codes and rejects malformed input', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(59_000);
+    const rfcSecret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+    await expect(service.verifyCode(rfcSecret, '287082')).resolves.toBe(true);
+    await expect(service.verifyCode(rfcSecret, '12345')).resolves.toBe(false);
+    await expect(service.verifyCode('invalid!', '123456')).resolves.toBe(false);
+    now.mockRestore();
+  });
+
+  it('uses the default backup-code count', async () => {
     expect(await service.generateBackupCodes()).toHaveLength(10);
-    expect(await service.verifyCode('secret', '123456')).toBe(false);
   });
 });
 
@@ -326,7 +374,7 @@ describe('AuthService', () => {
       .mockResolvedValue(true);
     const result = await isolated.authenticate('user@example.com', 'Valid-Passw0rd!');
     expect(result.success).toBe(true);
-    expect(result.tokenPair?.accessToken).toBe('access_token_placeholder');
+    expect(result.tokenPair?.accessToken.split('.')).toHaveLength(3);
     expect(isolated.getAuditService().getRecentEvents()).toHaveLength(1);
     password.mockRestore();
   });

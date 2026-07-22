@@ -324,12 +324,13 @@ export function createRequestLoggingMiddleware(config: RequestLoggingConfig) {
       const level =
         statusCode >= 500 ? LogLevel.ERROR : statusCode >= 400 ? LogLevel.WARN : LogLevel.INFO;
 
+      const path = req.originalUrl?.split('?')[0] || req.originalUrl;
       logger[level]({
         method: req.method,
-        path: req.originalUrl?.split('?')[0] || req.originalUrl,
+        path,
         statusCode,
         durationMs: Math.round(durationMs),
-        message: `${req.method} ${req.originalUrl} ${statusCode}`,
+        message: `${req.method} ${path} ${statusCode}`,
       });
     });
 

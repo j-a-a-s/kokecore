@@ -13,7 +13,14 @@
  */
 
 import * as argon2 from 'argon2';
-import { createHash, randomInt, randomUUID } from 'node:crypto';
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  randomInt,
+  randomUUID,
+  timingSafeEqual,
+} from 'node:crypto';
 import { z } from 'zod';
 
 /**
@@ -196,44 +203,50 @@ export class PasswordService {
  */
 export class JwtService {
   private config: AuthConfig;
-  private jwtService: any; // @nestjs/jwt JwtService
 
   constructor(config: AuthConfig) {
     this.config = config;
-    // Initialize JWT service
-    this.jwtService = null;
+    if (config.jwtAccessSecret === config.jwtRefreshSecret) {
+      throw new Error('JWT access and refresh secrets must be different');
+    }
   }
 
   /**
    * Generate access token
    */
   async generateAccessToken(payload: JwtAccessPayload): Promise<string> {
-    // In production, this would use @nestjs/jwt JwtService
-    return 'access_token_placeholder';
+    return this.sign(
+      payload,
+      this.config.jwtAccessSecret,
+      this.config.jwtAccessExpiresSeconds,
+      'access'
+    );
   }
 
   /**
    * Generate refresh token
    */
   async generateRefreshToken(payload: JwtRefreshPayload): Promise<string> {
-    // In production, this would use @nestjs/jwt JwtService
-    return 'refresh_token_placeholder';
+    return this.sign(
+      payload,
+      this.config.jwtRefreshSecret,
+      this.config.jwtRefreshExpiresSeconds,
+      'refresh'
+    );
   }
 
   /**
    * Verify access token
    */
   async verifyAccessToken(token: string): Promise<JwtAccessPayload> {
-    // In production, this would use @nestjs/jwt JwtService
-    return {} as JwtAccessPayload;
+    return this.verify<JwtAccessPayload>(token, this.config.jwtAccessSecret, 'access');
   }
 
   /**
    * Verify refresh token
    */
   async verifyRefreshToken(token: string): Promise<JwtRefreshPayload> {
-    // In production, this would use @nestjs/jwt JwtService
-    return {} as JwtRefreshPayload;
+    return this.verify<JwtRefreshPayload>(token, this.config.jwtRefreshSecret, 'refresh');
   }
 
   /**
@@ -267,6 +280,80 @@ export class JwtService {
       refreshToken,
       expiresIn: this.config.jwtAccessExpiresSeconds,
     };
+  }
+
+  private sign(
+    payload: JwtAccessPayload | JwtRefreshPayload,
+    secret: string,
+    expiresInSeconds: number,
+    tokenUse: 'access' | 'refresh'
+  ): string {
+    const now = Math.floor(Date.now() / 1000);
+    const header = encodeJwtSegment({ alg: 'HS256', typ: 'JWT' });
+    const body = encodeJwtSegment({ ...payload, iat: now, exp: now + expiresInSeconds, tokenUse });
+    const signature = createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url');
+    return `${header}.${body}.${signature}`;
+  }
+
+  private verify<T extends JwtAccessPayload | JwtRefreshPayload>(
+    token: string,
+    secret: string,
+    expectedTokenUse: 'access' | 'refresh'
+  ): T {
+    const parts = token.split('.');
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
+      throw new Error('Invalid JWT');
+    }
+
+    const [header, body, signature] = parts;
+    const parsedHeader = decodeJwtSegment(header) as { alg?: unknown; typ?: unknown };
+    if (parsedHeader.alg !== 'HS256' || parsedHeader.typ !== 'JWT') {
+      throw new Error('Invalid JWT header');
+    }
+
+    const expectedSignature = createHmac('sha256', secret).update(`${header}.${body}`).digest();
+    const suppliedSignature = Buffer.from(signature, 'base64url');
+    if (
+      suppliedSignature.length !== expectedSignature.length ||
+      !timingSafeEqual(suppliedSignature, expectedSignature)
+    ) {
+      throw new Error('Invalid JWT signature');
+    }
+
+    const payload = decodeJwtSegment(body) as Record<string, unknown>;
+    const expiresAt = payload.exp;
+    if (
+      typeof payload.sub !== 'string' ||
+      !Number.isInteger(payload.sessionVersion) ||
+      typeof expiresAt !== 'number' ||
+      !Number.isInteger(expiresAt) ||
+      !Number.isInteger(payload.iat) ||
+      payload.tokenUse !== expectedTokenUse ||
+      expiresAt <= Math.floor(Date.now() / 1000)
+    ) {
+      throw new Error('Invalid or expired JWT');
+    }
+
+    if (expectedTokenUse === 'access' && typeof payload.email !== 'string') {
+      throw new Error('Invalid or expired JWT');
+    }
+    if (expectedTokenUse === 'refresh' && typeof payload.sessionId !== 'string') {
+      throw new Error('Invalid or expired JWT');
+    }
+
+    return payload as unknown as T;
+  }
+}
+
+function encodeJwtSegment(value: unknown): string {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+function decodeJwtSegment(value: string): unknown {
+  try {
+    return JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+  } catch {
+    throw new Error('Invalid JWT');
   }
 }
 
@@ -430,8 +517,7 @@ export class MFAService {
    * Generate MFA secret
    */
   async generateSecret(): Promise<string> {
-    // In production, this would use otplib or similar
-    return 'mfa_secret_placeholder';
+    return encodeBase32(randomBytes(20));
   }
 
   /**
@@ -449,15 +535,25 @@ export class MFAService {
    * Verify MFA code
    */
   async verifyCode(secret: string, code: string): Promise<boolean> {
-    // In production, this would use otplib
-    return false;
+    if (!/^\d{6}$/.test(code)) {
+      return false;
+    }
+
+    try {
+      const currentStep = Math.floor(Date.now() / 30_000);
+      return [currentStep - 1, currentStep, currentStep + 1].some((step) =>
+        secureEqual(code, generateTotp(secret, step))
+      );
+    } catch {
+      return false;
+    }
   }
 
   /**
    * Verify backup code
    */
   async verifyBackupCode(backupCodes: string[], code: string): Promise<boolean> {
-    return backupCodes.includes(code);
+    return backupCodes.some((backupCode) => secureEqual(backupCode, code));
   }
 
   /**
@@ -470,11 +566,62 @@ export class MFAService {
   private generateBackupCode(): string {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
-    for (let index = 0; index < 8; index += 1) {
+    for (let index = 0; index < 10; index += 1) {
       code += alphabet.charAt(randomInt(alphabet.length));
     }
     return code;
   }
+}
+
+function encodeBase32(value: Buffer): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const byte of value) {
+    bits += byte.toString(2).padStart(8, '0');
+  }
+
+  let encoded = '';
+  for (let index = 0; index < bits.length; index += 5) {
+    encoded += alphabet[Number.parseInt(bits.slice(index, index + 5).padEnd(5, '0'), 2)];
+  }
+  return encoded;
+}
+
+function decodeBase32(value: string): Buffer {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const character of value.replace(/=|\s/g, '').toUpperCase()) {
+    const index = alphabet.indexOf(character);
+    if (index === -1) {
+      throw new Error('Invalid MFA secret');
+    }
+    bits += index.toString(2).padStart(5, '0');
+  }
+
+  const bytes: number[] = [];
+  for (let index = 0; index + 8 <= bits.length; index += 8) {
+    bytes.push(Number.parseInt(bits.slice(index, index + 8), 2));
+  }
+  return Buffer.from(bytes);
+}
+
+function generateTotp(secret: string, step: number): string {
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(step));
+  const digest = createHmac('sha1', decodeBase32(secret)).update(counter).digest();
+  const offset = digest[digest.length - 1]! & 0x0f;
+  const binary =
+    ((digest[offset]! & 0x7f) << 24) |
+    (digest[offset + 1]! << 16) |
+    (digest[offset + 2]! << 8) |
+    digest[offset + 3]!;
+  return String(binary % 1_000_000).padStart(6, '0');
+}
+
+function secureEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 /**

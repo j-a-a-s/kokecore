@@ -41,3 +41,4 @@ pnpm-debug.log*
 
 # Generated supply-chain artifacts
 artifacts/
+.artifacts/
