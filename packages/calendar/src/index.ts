@@ -688,9 +688,8 @@ export class SyncQueueService {
   /**
    * Process individual job
    */
-  private async processJob(job: SyncJob): Promise<void> {
+  private async processJob(_job: SyncJob): Promise<void> {
     // In production, this would process the sync job
-    console.log(`Processing job ${job.id}`);
   }
 
   /**
