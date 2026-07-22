@@ -2,15 +2,19 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  CONFIG_LINK_SPECIFIER,
+  CONFIG_WORKSPACE_SPECIFIER,
   findConfigDeepImports,
+  kaklenCloneArguments,
   temporaryArtifactSpecifier,
   validateKaklenDependencyContract,
 } from './certify-config-kaklen.mjs';
 
 const artifactSpecifier = temporaryArtifactSpecifier('kokecore-config-0.2.0.tgz');
 
-function manifests(configSpecifier = artifactSpecifier, linkedSpecifier = 'link:../core') {
+function manifests(
+  configSpecifier = artifactSpecifier,
+  linkedSpecifier = CONFIG_WORKSPACE_SPECIFIER
+) {
   return [
     {
       path: 'packages/config/package.json',
@@ -38,7 +42,7 @@ packages/config:
       version: file:../artifacts/kokecore-config-0.2.0.tgz
 `;
 
-test('accepts a temporary Config artifact while seven packages stay linked', () => {
+test('accepts a temporary Config artifact while seven packages stay workspace-bound', () => {
   assert.deepEqual(
     validateKaklenDependencyContract(manifests(), validArtifactLockfile, artifactSpecifier),
     []
@@ -47,31 +51,42 @@ test('accepts a temporary Config artifact while seven packages stay linked', () 
 
 test('rejects a Config link during artifact validation and migration of another package', () => {
   const errors = validateKaklenDependencyContract(
-    manifests(CONFIG_LINK_SPECIFIER, 'file:auth.tgz'),
-    validArtifactLockfile.replace(artifactSpecifier, CONFIG_LINK_SPECIFIER),
+    manifests(CONFIG_WORKSPACE_SPECIFIER, 'file:auth.tgz'),
+    validArtifactLockfile.replace(artifactSpecifier, CONFIG_WORKSPACE_SPECIFIER),
     artifactSpecifier
   );
   assert.ok(errors.some((error) => error.includes('unexpected specifier')));
-  assert.ok(errors.some((error) => error.includes('must remain a local link')));
-  assert.ok(errors.some((error) => error.includes('lockfile still contains a local Config link')));
+  assert.ok(errors.some((error) => error.includes('must remain a workspace dependency')));
+  assert.ok(errors.some((error) => error.includes('non-artifact Config reference')));
 });
 
-test('accepts the restored Config link during rollback', () => {
-  const linkLockfile = `
+test('accepts the restored Config workspace dependency during rollback', () => {
+  const workspaceLockfile = `
 packages/config:
   dependencies:
     '@kokecore/config':
-      specifier: ${CONFIG_LINK_SPECIFIER}
-      version: link:../../../kokecore/packages/config
+      specifier: ${CONFIG_WORKSPACE_SPECIFIER}
+      version: link:../../vendor/kokecore/packages/config
 `;
   assert.deepEqual(
     validateKaklenDependencyContract(
-      manifests(CONFIG_LINK_SPECIFIER),
-      linkLockfile,
-      CONFIG_LINK_SPECIFIER
+      manifests(CONFIG_WORKSPACE_SPECIFIER),
+      workspaceLockfile,
+      CONFIG_WORKSPACE_SPECIFIER
     ),
     []
   );
+});
+
+test('clones Kaklen with its pinned submodules', () => {
+  assert.deepEqual(kaklenCloneArguments('/source/kaklen', '/tmp/kaklen'), [
+    'clone',
+    '--quiet',
+    '--no-local',
+    '--recurse-submodules',
+    '/source/kaklen',
+    '/tmp/kaklen',
+  ]);
 });
 
 test('detects Config deep imports but accepts the package root', () => {

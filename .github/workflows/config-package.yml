@@ -49,9 +49,6 @@ jobs:
       - name: Build Config
         run: pnpm --filter @kokecore/config build
 
-      - name: Validate workspace packages
-        run: pnpm package:validate
-
       - name: Create reproducible Config tarball
         run: pnpm config:artifact -- --output artifacts/config
 

@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createReproducibleConfigArtifact } from './certify-config-artifact.mjs';
 
-export const CONFIG_LINK_SPECIFIER = 'link:../../../kokecore/packages/config';
+export const CONFIG_WORKSPACE_SPECIFIER = 'workspace:*';
 
 export const LINKED_KOKECORE_PACKAGES = Object.freeze([
   '@kokecore/auth',
@@ -45,6 +45,10 @@ export function temporaryArtifactSpecifier(archiveName) {
     throw new Error(`Invalid Config artifact name: ${archiveName}`);
   }
   return `file:../../../artifacts/${archiveName}`;
+}
+
+export function kaklenCloneArguments(source, destination) {
+  return ['clone', '--quiet', '--no-local', '--recurse-submodules', source, destination];
 }
 
 export function collectKokecoreDependencies(manifests) {
@@ -81,8 +85,10 @@ export function validateKaklenDependencyContract(manifests, lockfile, expectedCo
       continue;
     }
     for (const use of uses) {
-      if (!use.specifier.startsWith('link:')) {
-        errors.push(`${packageName} must remain a local link in ${use.path}`);
+      if (use.specifier !== CONFIG_WORKSPACE_SPECIFIER && !use.specifier.startsWith('link:')) {
+        errors.push(
+          `${packageName} must remain a workspace dependency or local link in ${use.path}`
+        );
       }
     }
   }
@@ -97,8 +103,12 @@ export function validateKaklenDependencyContract(manifests, lockfile, expectedCo
     if (!lockfile.includes('kokecore-config-0.2.0.tgz')) {
       errors.push('lockfile does not contain the temporary certified Config artifact');
     }
-    if (/['"]?@kokecore\/config['"]?:[\s\S]{0,250}(?:specifier|version):\s*link:/.test(lockfile)) {
-      errors.push('lockfile still contains a local Config link');
+    if (
+      /['"]?@kokecore\/config['"]?:[\s\S]{0,250}(?:specifier|version):\s*(?:link:|workspace:)/.test(
+        lockfile
+      )
+    ) {
+      errors.push('lockfile still contains a non-artifact Config reference');
     }
   }
   return errors;
@@ -124,7 +134,7 @@ export function certifyConfigWithKaklen({
   try {
     assertRepository(source, 'Kaklen source');
     assertRepository(workspaceRoot, 'KOKE CORE source');
-    run('git', ['clone', '--quiet', '--no-local', source, kaklenRoot], temporaryRoot);
+    run('git', kaklenCloneArguments(source, kaklenRoot), temporaryRoot);
     const kaklenSha = capture('git', ['rev-parse', 'HEAD'], kaklenRoot).trim();
     if (expectedKaklenSha && kaklenSha !== expectedKaklenSha) {
       throw new Error(`Kaklen SHA mismatch: expected ${expectedKaklenSha}, received ${kaklenSha}.`);
@@ -142,15 +152,18 @@ export function certifyConfigWithKaklen({
       symlinkSync(resolve(artifact.archive), join(artifactsRoot, basename(artifact.archive)));
     }
 
-    rmSync(join(kaklenRoot, 'vendor', 'kokecore', 'config'), {
-      recursive: true,
-      force: true,
-    });
+    const configUses = collectKokecoreDependencies(collectPackageManifests(kaklenRoot)).get(
+      '@kokecore/config'
+    );
+    const baselineSpecifiers = [...new Set((configUses ?? []).map((use) => use.specifier))];
+    if (baselineSpecifiers.length !== 1) {
+      throw new Error('Kaklen must use one consistent @kokecore/config specifier.');
+    }
+    const baselineConfigSpecifier = baselineSpecifiers[0];
 
-    setConfigSpecifier(kaklenRoot, CONFIG_LINK_SPECIFIER);
-    run('pnpm', ['install', '--no-frozen-lockfile'], kaklenRoot);
+    run('pnpm', ['install', '--frozen-lockfile'], kaklenRoot);
     const baselineLockfile = readFileSync(join(kaklenRoot, 'pnpm-lock.yaml'), 'utf8');
-    validateKaklenCheckout(kaklenRoot, CONFIG_LINK_SPECIFIER);
+    validateKaklenCheckout(kaklenRoot, baselineConfigSpecifier);
 
     const artifactSpecifier = temporaryArtifactSpecifier(basename(artifact.archive));
     const integrationStartedAt = Date.now();
@@ -165,10 +178,10 @@ export function certifyConfigWithKaklen({
     const integrationDurationMs = Date.now() - integrationStartedAt;
 
     const rollbackStartedAt = Date.now();
-    setConfigSpecifier(kaklenRoot, CONFIG_LINK_SPECIFIER);
+    setConfigSpecifier(kaklenRoot, baselineConfigSpecifier);
     writeFileSync(join(kaklenRoot, 'pnpm-lock.yaml'), baselineLockfile);
-    run('pnpm', ['install', '--no-frozen-lockfile'], kaklenRoot);
-    validateKaklenCheckout(kaklenRoot, CONFIG_LINK_SPECIFIER);
+    run('pnpm', ['install', '--frozen-lockfile'], kaklenRoot);
+    validateKaklenCheckout(kaklenRoot, baselineConfigSpecifier);
     for (const args of ROLLBACK_VALIDATIONS) {
       if (args[0] === 'test') clearKaklenTestRedisState(kaklenRoot);
       run('pnpm', args, kaklenRoot);
