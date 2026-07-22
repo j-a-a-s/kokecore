@@ -5,6 +5,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const SUPPORTED_PNPM_VERSIONS = Object.freeze(['8.15.0', '9.15.4']);
+const CONFIG_PACKAGE_NAME = '@kokecore/config';
+const FORBIDDEN_DEEP_IMPORT = [CONFIG_PACKAGE_NAME, 'dist', 'index.js'].join('/');
 
 export function certifyIsolatedConfigConsumer({ archive, pnpmVersion, root = process.cwd() }) {
   if (!SUPPORTED_PNPM_VERSIONS.includes(pnpmVersion)) {
@@ -61,7 +63,7 @@ export function certifyIsolatedConfigConsumer({ archive, pnpmVersion, root = pro
 
     const deepRuntime = spawn(
       'node',
-      ['--input-type=module', '--eval', 'await import("@kokecore/config/dist/index.js")'],
+      ['--input-type=module', '--eval', `await import(${JSON.stringify(FORBIDDEN_DEEP_IMPORT)})`],
       consumerRoot
     );
     const deepRuntimeOutput = `${deepRuntime.stdout}\n${deepRuntime.stderr}`;
@@ -151,7 +153,7 @@ console.log("CONFIG_ISOLATED_CONSUMER_OK");
   );
   writeFileSync(
     join(consumerRoot, 'src/deep-import.ts'),
-    'import { readString } from "@kokecore/config/dist/index.js";\nvoid readString;\n'
+    `import { readString } from ${JSON.stringify(FORBIDDEN_DEEP_IMPORT)};\nvoid readString;\n`
   );
 }
 
